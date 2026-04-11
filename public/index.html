@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hotel Management</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --green: #16a34a; --green-light: #dcfce7; --green-dark: #15803d;
+  --red: #dc2626; --red-light: #fee2e2; --red-dark: #b91c1c;
+  --orange: #ea580c; --orange-light: #ffedd5;
+  --blue: #2563eb; --blue-light: #dbeafe;
+  --yellow: #ca8a04; --yellow-light: #fef9c3;
+  --bg: #f4f4f5; --card: #ffffff; --border: #e4e4e7;
+  --text: #18181b; --text2: #52525b; --text3: #a1a1aa;
+  --primary: #1e40af; --primary-dark: #1e3a8a;
+  --nav-h: 64px; --header-h: 56px;
+}
+html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); }
+
+/* ===== LAYOUT ===== */
+#app { height: 100%; display: flex; flex-direction: column; }
+.header { height: var(--header-h); background: var(--primary); color: white; display: flex; align-items: center; padding: 0 16px; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); flex-shrink: 0; }
+.header h1 { font-size: 17px; font-weight: 700; flex: 1; }
+.header .hotel-badge { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: 600; }
+.header .icon-btn { width: 36px; height: 36px; background: rgba(255,255,255,0.15); border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+.main-content { flex: 1; overflow-y: auto; padding: 12px; padding-bottom: calc(var(--nav-h) + 12px); }
+
+.bottom-nav { height: var(--nav-h); background: white; border-top: 1px solid var(--border); display: flex; align-items: center; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 4px; cursor: pointer; color: var(--text3); transition: color 0.15s; border: none; background: none; }
+.nav-item.active { color: var(--primary); }
+.nav-item .nav-icon { font-size: 22px; line-height: 1; }
+.nav-item .nav-label { font-size: 11px; font-weight: 600; }
+
+/* ===== SCREENS ===== */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ===== LOGIN ===== */
+#loginScreen { min-height: 100vh; background: linear-gradient(160deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+.login-logo { width: 80px; height: 80px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+.login-title { color: white; font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+.login-sub { color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 40px; }
+.login-card { width: 100%; max-width: 360px; background: white; border-radius: 20px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.login-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--text); }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+.form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; outline: none; transition: border-color 0.15s; background: white; }
+.form-input:focus { border-color: var(--primary); }
+.form-select { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; outline: none; background: white; }
+.btn-primary { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+.btn-primary:active { background: var(--primary-dark); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.error-msg { color: var(--red); font-size: 13px; margin-top: 8px; text-align: center; padding: 8px; background: var(--red-light); border-radius: 8px; display: none; }
+.error-msg.show { display: block; }
+
+/* ===== CARDS ===== */
+.card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.section-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+/* ===== STATS ROW ===== */
+.stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
+.stat-card { background: var(--card); border-radius: 12px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.stat-value { font-size: 24px; font-weight: 800; line-height: 1; }
+.stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; font-weight: 500; }
+.stat-card.green .stat-value { color: var(--green); }
+.stat-card.red .stat-value { color: var(--red); }
+.stat-card.blue .stat-value { color: var(--blue); }
+.stat-card.orange .stat-value { color: var(--orange); }
+
+/* ===== ROOM GRID ===== */
+.floor-section { margin-bottom: 12px; }
+.floor-label { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding: 0 2px; }
+.rooms-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.room-tile { flex: 1; min-width: 70px; max-width: 110px; border-radius: 12px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; border: none; transition: transform 0.1s, box-shadow 0.1s; position: relative; }
+.room-tile:active { transform: scale(0.95); }
+.room-number { font-size: 18px; font-weight: 800; line-height: 1; }
+.room-status-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+.room-guest { font-size: 9px; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-time { font-size: 9px; opacity: 0.8; }
+
+.room-tile.vacant    { background: var(--green-light); color: var(--green-dark); box-shadow: 0 1px 3px rgba(22,163,74,0.2); }
+.room-tile.occupied  { background: var(--red-light); color: var(--red-dark); box-shadow: 0 1px 3px rgba(220,38,38,0.2); }
+.room-tile.overdue   { background: #fee2e2; color: #7f1d1d; box-shadow: 0 2px 6px rgba(220,38,38,0.3); border: 2px solid var(--red); }
+.overdue-badge { position: absolute; top: -4px; right: -4px; background: var(--red); color: white; border-radius: 99px; font-size: 8px; font-weight: 700; padding: 2px 5px; }
+
+/* ===== MODALS ===== */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 20px 20px 0 0; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 20px; animation: slideUp 0.25s ease; }
+.modal-owner { border-radius: 20px; margin: 16px; max-height: calc(90vh - 32px); }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-header h2 { font-size: 18px; font-weight: 700; }
+.modal-close { width: 32px; height: 32px; background: var(--bg); border: none; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* ===== BOOKING TYPE TOGGLE ===== */
+.type-toggle { display: flex; gap: 0; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary); margin-bottom: 16px; }
+.type-btn { flex: 1; padding: 10px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; background: white; color: var(--primary); transition: all 0.15s; }
+.type-btn.active { background: var(--primary); color: white; }
+
+/* ===== PAYMENT MODE ===== */
+.pay-modes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.pay-mode-btn { padding: 8px 14px; border: 2px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: white; color: var(--text2); transition: all 0.15s; }
+.pay-mode-btn.active { border-color: var(--primary); color: var(--primary); background: var(--blue-light); }
+
+/* ===== LISTS ===== */
+.list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.list-item:last-child { border-bottom: none; }
+.list-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.list-body { flex: 1; min-width: 0; }
+.list-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.list-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+.list-right { text-align: right; flex-shrink: 0; }
+.list-amount { font-size: 15px; font-weight: 700; color: var(--text); }
+.list-meta { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+/* ===== ALERT BADGE ===== */
+.alert-item { background: var(--red-light); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.alert-item.warning { background: var(--orange-light); }
+.alert-icon { font-size: 20px; }
+.alert-text { flex: 1; }
+.alert-title { font-size: 13px; font-weight: 700; color: var(--red-dark); }
+.alert-item.warning .alert-title { color: var(--orange); }
+.alert-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* ===== OWNER HOTEL CARD ===== */
+.hotel-overview-card { border-radius: 14px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; }
+.hotel-card-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; }
+.hotel-card-header h3 { font-size: 16px; font-weight: 700; color: white; }
+.hotel-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); background: white; }
+.hcs { padding: 12px 8px; text-align: center; border-right: 1px solid var(--border); }
+.hcs:last-child { border-right: none; }
+.hcs-val { font-size: 18px; font-weight: 800; }
+.hcs-lbl { font-size: 10px; color: var(--text2); margin-top: 2px; font-weight: 500; }
+
+/* ===== HOTEL TABS ===== */
+.hotel-tabs { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; }
+.hotel-tab { padding: 8px 16px; border-radius: 99px; border: 2px solid var(--border); font-size: 13px; font-weight: 700; cursor: pointer; background: white; color: var(--text2); white-space: nowrap; transition: all 0.15s; }
+.hotel-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* ===== EXPENSE CATEGORIES ===== */
+.cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.cat-btn { padding: 10px 6px; border: 2px solid var(--border); border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; background: white; color: var(--text2); text-align: center; transition: all 0.15s; }
+.cat-btn.active { border-color: var(--primary); color: var(--primary); background: var(--blue-light); }
+
+/* ===== TOAST ===== */
+#toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #18181b; color: white; padding: 10px 20px; border-radius: 99px; font-size: 14px; font-weight: 600; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.2s; white-space: nowrap; max-width: calc(100% - 32px); text-align: center; }
+#toast.show { opacity: 1; }
+#toast.success { background: var(--green); }
+#toast.error { background: var(--red); }
+
+/* ===== OWNER TOP SUMMARY ===== */
+.summary-total { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+.summary-total .big-num { font-size: 32px; font-weight: 800; }
+.summary-total .big-lbl { font-size: 13px; opacity: 0.8; margin-bottom: 16px; }
+.summary-row { display: flex; gap: 8px; }
+.summary-pill { flex: 1; background: rgba(255,255,255,0.15); border-radius: 10px; padding: 8px; text-align: center; }
+.summary-pill .val { font-size: 16px; font-weight: 700; }
+.summary-pill .lbl { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+
+/* ===== DATE PICKER ===== */
+.date-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.date-nav button { width: 36px; height: 36px; border: 1.5px solid var(--border); border-radius: 8px; background: white; cursor: pointer; font-size: 16px; }
+.date-nav .date-display { flex: 1; text-align: center; font-size: 14px; font-weight: 700; color: var(--text); }
+
+/* ===== REPORT TABLE ===== */
+.report-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.report-row:last-child { border-bottom: none; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 700; }
+.tag.hourly { background: var(--blue-light); color: var(--blue); }
+.tag.nightly { background: var(--yellow-light); color: var(--yellow); }
+.tag.paid { background: var(--green-light); color: var(--green); }
+.tag.partial { background: var(--orange-light); color: var(--orange); }
+.tag.unpaid { background: var(--red-light); color: var(--red); }
+.tag.active { background: var(--green-light); color: var(--green); }
+.tag.checked_out { background: #f4f4f5; color: var(--text2); }
+
+/* ===== MISC ===== */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text3); }
+.empty-icon { font-size: 40px; margin-bottom: 10px; }
+.empty-text { font-size: 14px; font-weight: 500; }
+.divider { height: 1px; background: var(--border); margin: 12px 0; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.text-green { color: var(--green); } .text-red { color: var(--red); } .text-blue { color: var(--blue); } .text-orange { color: var(--orange); }
+.fw700 { font-weight: 700; } .fs12 { font-size: 12px; } .fs13 { font-size: 13px; } .fs14 { font-size: 14px; }
+.mb8 { margin-bottom: 8px; } .mb12 { margin-bottom: 12px; }
+.btn-sm { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; }
+.btn-sm.green { background: var(--green); color: white; }
+.btn-sm.red { background: var(--red); color: white; }
+.btn-sm.blue { background: var(--primary); color: white; }
+.btn-sm.outline { background: white; border: 2px solid var(--primary); color: var(--primary); }
+.row-btns { display: flex; gap: 8px; margin-top: 10px; }
+
+/* Booking detail in modal */
+.booking-info-box { background: var(--bg); border-radius: 10px; padding: 12px; margin-bottom: 16px; }
+.booking-info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+.booking-info-row .lbl { color: var(--text2); }
+.booking-info-row .val { font-weight: 600; }
+
+.amount-big { font-size: 28px; font-weight: 800; text-align: center; margin: 12px 0; }
+.amount-big .currency { font-size: 18px; font-weight: 600; color: var(--text2); }
+.amount-big.paid { color: var(--green); }
+.amount-big.partial { color: var(--orange); }
+.amount-big.unpaid { color: var(--red); }
+
+/* Camera section */
+.camera-placeholder { background: #111; border-radius: 12px; aspect-ratio: 16/9; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+.camera-placeholder .cam-icon { font-size: 36px; margin-bottom: 8px; }
+.camera-placeholder .cam-text { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-logo">🏨</div>
+  <div class="login-title">Hotel Management</div>
+  <div class="login-sub">3 Hotels · Simple & Fast</div>
+  <div class="login-card">
+    <h2>Login</h2>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" class="form-input" id="loginUser" placeholder="Enter username" autocapitalize="none">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" class="form-input" id="loginPass" placeholder="Enter password">
+    </div>
+    <div id="loginError" class="error-msg"></div>
+    <button class="btn-primary" onclick="doLogin()" id="loginBtn">Login</button>
+    <div style="margin-top:16px; text-align:center; font-size:12px; color:var(--text3)">
+      Default: vardan / vardan123 &nbsp;|&nbsp; owner / owner123
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none; height:100vh; display:none; flex-direction:column;">
+
+  <!-- HEADER -->
+  <div class="header">
+    <span id="headerIcon" style="font-size:22px">🏨</span>
+    <h1 id="headerTitle">Hotel Management</h1>
+    <span id="headerHotel" class="hotel-badge" style="display:none"></span>
+    <button class="icon-btn" onclick="showLogoutConfirm()" title="Logout">⬡</button>
+  </div>
+
+  <!-- MAIN CONTENT AREA -->
+  <div class="main-content" id="mainContent">
+
+    <!-- ROOMS SCREEN -->
+    <div id="screenRooms" class="screen active">
+      <div id="roomsContent"></div>
+    </div>
+
+    <!-- BOOKINGS SCREEN -->
+    <div id="screenBookings" class="screen">
+      <div class="date-nav">
+        <button onclick="changeBookingDate(-1)">‹</button>
+        <div class="date-display" id="bookingDateDisplay">Today</div>
+        <button onclick="changeBookingDate(1)">›</button>
+      </div>
+      <div id="bookingsList"></div>
+    </div>
+
+    <!-- EXPENSES SCREEN -->
+    <div id="screenExpenses" class="screen">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="section-title" style="margin:0">💸 Expenses</div>
+        <button class="btn-sm blue" onclick="openExpenseModal()">+ Add Expense</button>
+      </div>
+      <div class="date-nav">
+        <button onclick="changeExpenseDate(-1)">‹</button>
+        <div class="date-display" id="expenseDateDisplay">Today</div>
+        <button onclick="changeExpenseDate(1)">›</button>
+      </div>
+      <div id="expensesList"></div>
+    </div>
+
+    <!-- REPORT SCREEN -->
+    <div id="screenReport" class="screen">
+      <div id="reportContent"></div>
+    </div>
+
+    <!-- OWNER DASHBOARD SCREEN -->
+    <div id="screenOwner" class="screen">
+      <div id="ownerContent"></div>
+    </div>
+
+    <!-- CAMERAS SCREEN -->
+    <div id="screenCameras" class="screen">
+      <div id="camerasContent"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav" id="bottomNav"></div>
+
+</div><!-- end mainApp -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- ROOM ACTION MODAL -->
+<div class="modal-overlay" id="roomModal">
+  <div class="modal" id="roomModalInner"></div>
+</div>
+
+<!-- BOOKING FORM MODAL -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="bookingModalTitle">Book Room</h2>
+      <button class="modal-close" onclick="closeModal('bookingModal')">✕</button>
+    </div>
+
+    <div class="type-toggle mb12">
+      <button class="type-btn active" id="typeHourly" onclick="setBookingType('hourly')">⏰ By Hours</button>
+      <button class="type-btn" id="typeNightly" onclick="setBookingType('nightly')">🌙 By Nights</button>
+    </div>
+
+    <div class="form-group">
+      <label>Guest Name *</label>
+      <input type="text" class="form-input" id="guestName" placeholder="Enter guest name" autocapitalize="words">
+    </div>
+    <div class="form-group">
+      <label>Phone Number</label>
+      <input type="tel" class="form-input" id="guestPhone" placeholder="10 digit mobile number">
+    </div>
+
+    <div id="hourlyFields">
+      <div class="form-group">
+        <label>Check-In Time</label>
+        <input type="datetime-local" class="form-input" id="checkInTime">
+      </div>
+      <div class="form-group">
+        <label>Expected Check-Out Time</label>
+        <input type="datetime-local" class="form-input" id="expectedCheckout">
+      </div>
+      <div class="form-group">
+        <label>Duration (e.g. "3 hours", "90 mins")</label>
+        <input type="text" class="form-input" id="durationLabel" placeholder="e.g. 3 hours, 1.5 hours">
+      </div>
+    </div>
+
+    <div id="nightlyFields" style="display:none">
+      <div class="form-group">
+        <label>Check-In Date</label>
+        <input type="date" class="form-input" id="checkInDate">
+      </div>
+      <div class="form-group">
+        <label>Number of Nights *</label>
+        <input type="number" class="form-input" id="numNights" placeholder="e.g. 1, 2, 3" min="1">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Amount (₹) *</label>
+      <input type="number" class="form-input" id="bookingAmount" placeholder="e.g. 500, 1200" min="0" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <input type="text" class="form-input" id="bookingNotes" placeholder="Any extra notes">
+    </div>
+
+    <button class="btn-primary" onclick="submitBooking()">Confirm Booking</button>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Add Payment</h2>
+      <button class="modal-close" onclick="closeModal('paymentModal')">✕</button>
+    </div>
+    <div class="booking-info-box" id="paymentBookingInfo"></div>
+    <div class="form-group">
+      <label>Amount Received (₹) *</label>
+      <input type="number" class="form-input" id="paymentAmount" placeholder="Enter amount" min="0" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label>Payment Mode</label>
+      <div class="pay-modes">
+        <button class="pay-mode-btn active" onclick="setPayMode(this,'Cash')">💵 Cash</button>
+        <button class="pay-mode-btn" onclick="setPayMode(this,'UPI')">📱 UPI</button>
+        <button class="pay-mode-btn" onclick="setPayMode(this,'Card')">💳 Card</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <input type="text" class="form-input" id="paymentNotes" placeholder="e.g. Partial payment">
+    </div>
+    <button class="btn-primary" onclick="submitPayment()">Save Payment</button>
+  </div>
+</div>
+
+<!-- EXPENSE MODAL -->
+<div class="modal-overlay" id="expenseModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Add Expense</h2>
+      <button class="modal-close" onclick="closeModal('expenseModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Category *</label>
+      <div class="cat-grid">
+        <button class="cat-btn" onclick="selectCat(this,'Cleaning')">🧹 Cleaning</button>
+        <button class="cat-btn" onclick="selectCat(this,'Repair')">🔧 Repair</button>
+        <button class="cat-btn" onclick="selectCat(this,'Electricity')">💡 Electricity</button>
+        <button class="cat-btn" onclick="selectCat(this,'Water')">💧 Water</button>
+        <button class="cat-btn" onclick="selectCat(this,'Supplies')">🛒 Supplies</button>
+        <button class="cat-btn" onclick="selectCat(this,'Laundry')">👕 Laundry</button>
+        <button class="cat-btn" onclick="selectCat(this,'Food')">🍽️ Food</button>
+        <button class="cat-btn" onclick="selectCat(this,'Salary')">👤 Salary</button>
+        <button class="cat-btn" onclick="selectCat(this,'Other')">📦 Other</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <input type="text" class="form-input" id="expenseDesc" placeholder="What was this expense for?">
+    </div>
+    <div class="form-group">
+      <label>Amount (₹) *</label>
+      <input type="number" class="form-input" id="expenseAmount" placeholder="Enter amount" min="0" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" class="form-input" id="expenseDate">
+    </div>
+    <button class="btn-primary" onclick="submitExpense()">Save Expense</button>
+  </div>
+</div>
+
+<!-- CHECKOUT CONFIRM MODAL -->
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Check Out Guest</h2>
+      <button class="modal-close" onclick="closeModal('checkoutModal')">✕</button>
+    </div>
+    <div id="checkoutInfo"></div>
+    <button class="btn-primary" onclick="confirmCheckout()" style="margin-top:12px">✅ Confirm Check Out</button>
+  </div>
+</div>
+
+<!-- LOGOUT CONFIRM -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="modal">
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:40px;margin-bottom:12px">👋</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px">Logout?</div>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:24px">Are you sure you want to logout?</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-primary" style="background:var(--bg);color:var(--text);flex:1" onclick="closeModal('logoutModal')">Cancel</button>
+        <button class="btn-primary" style="flex:1" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== APP STATE =====
+let STATE = {
+  user: null,
+  hotel: null,
+  currentScreen: 'rooms',
+  currentBookingType: 'hourly',
+  currentPayMode: 'Cash',
+  currentExpenseCat: null,
+  bookingDate: new Date().toISOString().substring(0,10),
+  expenseDate: new Date().toISOString().substring(0,10),
+  activeBookingId: null,    // for payment
+  activeCheckoutId: null,   // for checkout
+  activeRoomId: null,
+  activeHotelId: null,      // for room booking
+  ownerSelectedHotel: 'all',
+  rooms: [],
+};
+
+// ===== UTILS =====
+function fmt(n) { return '₹' + Number(n||0).toLocaleString('en-IN'); }
+function fmtDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }); }
+function fmtTime(d) { if (!d) return '-'; return new Date(d).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }); }
+function fmtDateTime(d) { if (!d) return '-'; const dt = new Date(d); return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) + ' ' + dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}); }
+function today() { return new Date().toISOString().substring(0,10); }
+function nowDatetimeLocal() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().substring(0,16); }
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { t.className = ''; }, 2800);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function api(method, url, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Something went wrong');
+  return data;
+}
+
+// ===== AUTH =====
+async function init() {
+  try {
+    const data = await api('GET', '/api/auth/me');
+    if (data.user) { STATE.user = data.user; STATE.hotel = data.hotel; showApp(); }
+  } catch(e) {}
+}
+
+async function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  err.classList.remove('show');
+  if (!u || !p) { err.textContent = 'Please enter username and password'; err.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = 'Logging in...';
+  try {
+    const data = await api('POST', '/api/auth/login', { username: u, password: p });
+    STATE.user = data.user; STATE.hotel = data.hotel;
+    showApp();
+  } catch(e) {
+    err.textContent = e.message; err.classList.add('show');
+  } finally { btn.disabled = false; btn.textContent = 'Login'; }
+}
+
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function showLogoutConfirm() { openModal('logoutModal'); }
+async function doLogout() {
+  await api('POST', '/api/auth/logout');
+  STATE.user = null; STATE.hotel = null;
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  closeModal('logoutModal');
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+
+  const isOwner = STATE.user.role === 'owner';
+  document.getElementById('headerTitle').textContent = isOwner ? 'All Hotels' : (STATE.hotel?.name || 'Hotel');
+  if (!isOwner) {
+    document.getElementById('headerHotel').textContent = STATE.hotel?.name || '';
+    document.getElementById('headerHotel').style.display = '';
+  }
+
+  buildNav();
+  if (isOwner) { switchScreen('owner'); loadOwnerDashboard(); }
+  else { switchScreen('rooms'); loadRooms(); }
+}
+
+// ===== NAVIGATION =====
+function buildNav() {
+  const nav = document.getElementById('bottomNav');
+  const isOwner = STATE.user.role === 'owner';
+
+  const staffItems = [
+    { id: 'rooms',    icon: '🏠', label: 'Rooms' },
+    { id: 'bookings', icon: '📋', label: 'Bookings' },
+    { id: 'expenses', icon: '💸', label: 'Expenses' },
+    { id: 'report',   icon: '📊', label: 'Report' },
+  ];
+  const ownerItems = [
+    { id: 'owner',    icon: '🏨', label: 'Hotels' },
+    { id: 'report',   icon: '📊', label: 'Report' },
+    { id: 'cameras',  icon: '🍘', label: 'CCTV' },
+    { id: 'audit',    icon: '🔑', label: 'Audit' },
+  ];
+
+  const items = isOwner ? ownerItems : staffItems;
+  nav.innerHTML = items.map(it => `
+    <div class="nav-item${STATE.currentScreen === it.id ? ' active' : ''}" onclick="navTo('${it.id}')">
+      <span>${it.icon}</span>
+      <span>${it.label}</span>
+    </div>`).join('');
+}
+
+function navTo(screen) {
+  switchScreen(screen);
+  switch(screen) {
+    case 'rooms': loadRooms(); break;
+    case 'bookings': loadBookings(); break;
+    case 'expenses': loadExpenses(); break;
+    case 'report': loadReport(); break;
+    case 'owner': loadOwnerDashboard(); break;
+    case 'cameras': showCameras(); break;
+    case 'audit': loadAudit(); break;
+  }
+}
+
+function switchScreen(s) {
+  STATE.currentScreen = s;
+  document.querySelectorAll('.screen').forEach(el => el.style.display = 'none');
+  const target = document.getElementById('screen-' + s);
+  if (target) target.style.display = '';
+  buildNav();
+}
+
+// ===== ROOMS =====
+async function loadRooms() {
+  const grid = document.getElementById('roomGrid');
+  grid.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
+  try {
+    const data = await api('GET', `/api/rooms/${STATE.hotel.id}`);
+    STATE.rooms = data.rooms;
+    renderRooms(data.rooms);
+  } catch(e) { grid.innerHTML = '<p>Error loading rooms</p>'; }
+}
+
+function renderRooms(rooms) {
+  const grid = document.getElementById('roomGrid');
+  if (!rooms.length) { grid.innerHTML = '<p style="text-align:center">No rooms found</p>'; return; }
+
+  const now = Date.now();
+  grid.innerHTML = rooms.map(room => {
+    let statusClass = 'vacant', extraClass = '', info = '', bookingId = null;
+    if (room.currentBooking) {
+      const b = room.currentBooking;
+      bookingId = b.id;
+      statusClass = 'occupied';
+      const isHourly = b.booking_type === 'hourly';
+      if (isHourly && b.expected_checkout) {
+        const exp = new Date(b.expected_checkout).getTime();
+        if (now > exp) extraClass = ' overdue';
+      }
+      info = b</span>${b.guest_name}${isHourly ? '<br><small>' + fmtTime(b.check_in_time) + '–' + (b.expected_checkout ? fmtTime(b.expected_checkout) : '?') + '</small>' : '<br><small>' + b.num_nights + ' nights</small>'}`;
+    }
+    const onclick = room.currentBooking
+      ? `openCheckout(${bookingId}, '${room.number}')`
+      : `openBookingModal(${room.id}, '${room.number}', ${STATE.hotel.id})`;
+
+    return `<div class="room-card ${statusClass}${extraClass}" onclick="${onclick}">
+      <div class="room-number">${room.number}</div>
+      <div class="room-type">${room.type}</div>
+      ${info ? `<div class="room-guest">${info}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ===== BOOKING MODAL - open from room card =====
+function openBookingModal(roomId, roomNum, hotelId) {
+  STATE.activeRoomId = roomId;
+  STATE.activeHotelId = hotelId;
+  document.getElementById('bookingRoomNum').textContent = 'Room ' + roomNum;
+  // default to hourly
+  setBookingType('hourly');
+  // set default dates
+  document.getElementById('checkInDT').value = nowDatetimeLocal();
+  document.getElementById('expectedCheckout').value = '';
+  document.getElementById('guestName').value = '';
+  document.getElementById('guestPhone').value = '';
+  document.getElementById('guestId').value = '';
+  document.getElementById('lastName').value = '';
+  document.getElementById('numNights').value = '1';
+  document.getElementById('agreedAmount').value = '';
+  openModal('bookingModal');
+}
+
+function setBookingType(type) {
+  STATE.currentBookingType = type;
+  document.querySelectorAll('.type-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.type === type));
+  document.getElementById('hourlyFields').style.display = type === 'hourly' ? '' : 'none';
+  document.getElementById('nightlyFields').style.display = type === 'nightly' ? '' : 'none';
+}
+
+function setPayMode(mode) {
+  STATE.currentPayMode = mode;
+  document.querySelectorAll('.pay-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+}
+
+async function submitBooking() {
+  const guestName = document.getElementById('guestName').value.trim();
+  if (!guestName) { showToast('Guest name is required', 'error'); return; }
+  const amt = parseFloat(document.getElementById('agreedAmount').value);
+  if (!amt || amt <= 0) { showToast('Amount is required', 'error'); return; }
+
+  const type = STATE.currentBookingType;
+  const paymode = STATE_currentPayMode;
+  const body = {
+    room_id: STATE.activeRoomId,
+    hotel_id: STATE.activeHotelId,
+    guest_name: guestName,
+    guest_phone: document.getElementById('guestPhone').value.trim() || null,
+    guest_id: document.getElementById('guestId').value.trim() || null,
+    last_name: document.getElementById('lastName').value.trim() || null,
+    booking_type: type,
+    agreed_amount: amt,
+    payment_mode: paymode,
+  };
+  if (type === 'hourly') {
+    body.check_in_time = document.getElementById('checkInDT').value;
+    body.expected_checkout = document.getElementById('expectedCheckout').value || null;
+  } else {
+    body.num_nights = int(document.getElementById('numNights').value);
+    body.booking_date = document.getElementById('bookingDate').value;
+  }
+  try {
+    await api('POST', '/api/bookings', body);
+    closeModal('bookingModal');
+    showToast('Booking confirmed!', 'success');
+    loadRooms();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== CHECKOUT =====
+function openCheckout(bookingId, roomNum) {
+  STATE.activeCheckoutId = bookingId;
+  const b = STATE-rUms.find(r => r.currentBooking?.id === bookingId)?.currentBooking;
+  if (!b) return;
+  const paid = Number(b.paid_amount||0);
+  const agreed = Number(b.agreed_amount||0);
+  const due = agreed - paid;
+  document.getElementById('checkoutInfo').innerHTML = `
+    <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--text2)">Guest</span><span>${b.guest_name}</span></div>
+      <div style="display:flex;justify-content:space-between;><span style="color:var(--text2)">Room</span><span>${roomNum}</span></div>
+    </div>
+    <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--text2)">Agreed</span><span>${fmt(agreed)}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--text2)">Paid</span><span>${fmt(paid)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Balance Due</span><span style="color:${due > 0 ? 'var(--error(' : 'var(--success)'};font-weight:700">${fmt(due)}</span></div>
+    </div>
+    ${due > 0 ? `
+    <div class="form-group">
+      <label>Collect Payment Now (₹)</label>
+      <input type="number" class="form-input" id="checkoutPayment" value="${due}" min="0" inputmode="numeric">
+    </div>
+    <div class="pay-select">
+      <button class="pay-btn active" data-mode="Cash" onclick="setPayMode('Cash')">Cash</button>
+      <button class="pay-btn" data-mode="UPI" onclick="setPayMode('UPI')">UPI</button>
+      <button class="pay-btn" data-mode="Card" onclick="setPayMode('Card')">Card</button>
+    </div>` : ''}
+  `;
+  openModal('checkoutModal');
+}
+
+async function confirmCheckout() {
+  const payInput = document.getElementById('checkoutPayment');
+  let payAmt = payInput ? parseFloat(payInput.value) : 0;
+  if (isNaN(payAmt)) payAmt = 0;
+  try {
+    if (payAmt > 0) {
+      await api('POST', '/api/payments', { booking_id: STATE.activeCheckoutId, amount: payAmt, mode: STATE.currentPayMode });
+    }
+    await api('PUT', `/api/bookings/${STATE.activeCheckoutId}/checkout`, {});
+    closeModal('checkoutModal');
+    showToast('Checked out successfully!', 'success');
+    loadRooms();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ===== BOOKINGS LIST=====
+async function loadBookings() {
+  const res = document.getElementById('bookingsList');
+  res.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
+  try {
+    const data = await api('GET', `/api/rooms/${STATE/hotel.id}?include_bookings=1`);
+    const bookings = data.rooms.flatMap(r => r.currentBooking ? [{...r.currentBooking, roomNum: r.number}] : []);
+    if (!bookings.length) { res.innerHTML = '<p style="text-align:center;color:var(--text2)">No active bookings</p>'; return; }
+    res.innerHTML = bookings.map(b => {
+      const paid = Number(b.paid_amount||0);
+      const agreed = Number(b.agreed_amount||0);
+      const due = agreed - paid;
+      return `<div class="booking-card" onclick="openPaymentModal(${b.id})">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div><strong>${b.guest_name}</strong><br><small style="color:var(--text2)">Room ${b.roomNum} &#8212; ${b.booking_type}</small></div>
+          <div style="text-align:right">${fmt(agreed)}<br><small style="color:${due > 0 ? 'var(--error(' : 'var(--success)'}">${due > 0 ? 'Due: ' + fmt(due) : 'Paid'}</small></div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) { res.innerHTML = '<p>Error loading bookings</p>'; }
+}
+
+function openPaymentModal(bookingId) {
+  STATE.activeBookingId = bookingId;
+  document.getElementById('payAmount').value = '';
+  openModal('paymentModal');
+}
+
+anync function submitPayment() {
+  const amt = parseFloat(document.getElementById('payAmount').value);
+  if (!amt || amt <= 0) { showToast('Enter valid amount', 'error'); return; }
+  try {
+    await api('POST', '/api/payments', { booking_id: STATE-ctiveBookingId, amount: amt, mode: STATE.currentPayMode });
+    closeModal('paymentModal');
+    showToast('Payment recorded!', 'success');
+    loadBookings();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ===== EXPEMSEQ�|=====
+async function loadExpenses() {
+  const res = document.getElementById('expensesList');
+  const sumEl = document.getElementById('expensesSum');
+  res.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
+  try {
+    const data = await api('GET', `/api/dashboard/${STATE_hotel.id}`);
+    const expenses = data.recentExpenses || [];
+    sumEl.textContent = fmt(data.totalExpenses);
+    if (!expenses.length) { res.innerHTML = '<p style="text-align:center;color:var(--text2)">No expenses today</p>'; return; }
+    res.innerHTML = expenses.map(e => `<div class="booking-card">
+      <div style="display:flex;justify-content:space-between">
+        <div><strong>${e.category}</strong>${e.description ? '<br><small style="color:var(--text2)">' + e.description + '</small>' : ''}</div>
+        <div style="text-align:right">${fmt(e.amount)}<br><small style="color:var(--text2)">${fmtDate(e.date)}</small></div>
+      </div>
+    </div>`).join('');
+  } catch(e) { res.innerHTML = '<p>Error</p>'; }
+}
+
+function selectCat(btn, cat) {
+  STATE.currentExpenseCat= Ncat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function submitExpense() {
+  if (!STATE.currentExpenseCat) { showToast('Select a category', 'error'); return; }
+  const amt = parseFloat(document.getElementById('expenseAmount').value);
+  if (!amt || amt <= 0) { showToast('Enter valid amount', 'error'); return; }
+  try {
+    await api('POST', '/api/expenses', {
+      hotel_id: STATE.hotel.id,
+      category: STATE_currentExpenseCat,
+      description: document.getElementById('expenseDesc').value.trim() || null,
+      amount: amt,
+      date: document.getElementById('expenseDate').value || today(),
+    });
+    closeModal('expenseModal');
+    STATE.currentExpenseCat = null;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    showToast('Expense saved!', 'success');
+    loadExpenses();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== REPORT =====
+async function loadReport() {
+  const res = document.getElementById('reportContent');
+  res.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
+  const hid = STATE-suser.role === 'owner' ? (STATE.ownerSelectedHotel !== 'all' ? STATE,ownerSelectedHotel : null) : STATE.hotel.id;
+  if (!hid) { res.innerHTML = '<p style="text-align:center">Select a hotel from the Dashboard to view report.</p>'; return; }
+  const date = document.getElementById('reportDate')?.value || today();
+  try {
+    const data = await api('GET', `/api/reports/${hid}?date=${date}`);
+    res.innerHTML = `<div class="stats-grid">
+      <div class="stat-card"><span class="stat-value">${fmt(data.totalRevenue)}</span><span class="stat-label">Revenue</span></div>
+      <div class="stat-card"><span class="stat-value">${fmt(data.totalExpenses)}</span><span class="stat-label">Expenses</span></div>
+      <div class="stat-card"><span class="stat-value">${fmt(data.netProfit)}</span><span class="stat-label">Net Profit</span></div>
+      <div class="stat-card"><span class="stat-value">${data.totalBookings}</span><span class="stat-label">Bookings</span></div>
+    </div>
+    ${data.dailyBookings?.length ? `
+    <h2 style="margin-top:16px;font-size:14px;color:var(--text2)">Today's Bookings</h2>
+    ${data.dailyBookings.map(b => `<div class="booking-card">
+      <div style="display:flex;justify-content:space-between">
+        <div><strong>${b.guest_name}</strong><br><small style="color:var(--text2)">Room ${b.room_number} &#8212; ${b.booking_type}</small></div>
+        <div style="text-align:right">${fmt(b.agreed_amount)}<br><small style="color:var(--text2)">${b.status}</small></div>
+      </div>
+    </div>`).join('')}` : ''}
+    ` ;
+  } catch(e) { res.innerHTML = '<p>Error loading report</p>'; }
+}
+
+// ===== OWNER DASHBOARD =====
+async function loadOwnerDashboard() {
+  const res = document.getElementById('ownerContent');
+  res.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
+  try {
+    const data = await api('GET', '/api/owner/dashboard');
+    let html = ``;
+    data.hotels.forEach(h => {
+      html += `<div class="booking-card" onclick="selectOwnerHotel(${h.id})">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong>${h.name}</strong>
+          <span style="color:var(--success);font-weight:700">${fmt(h.todayRevenue)}</span>
+        </div>
+        <div style="display:flex;gap:12px;font-size:13px;color:var(--text2)">
+          <span>🏠 ${h.occupiedRooms}/${h.totalRooms} occupied</span>
+          <span>💸 ${fmt(h.todayExpenses)}</span>
+        </div>
+      </div>`;
+    });
+    html += `<div class="booking-card" style="background:var(--primary);color:white">
+      <div style="display:flex;justify-content:space-between;al expense_date: document.getElementById('expenseDate').value });
+    closeModal('expenseModal');
+    showToast('Expense added! 💸', 'success');
+    loadExpenses();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== BOOKINGS SCREEN =====
+function changeBookingDate(delta) {
+  const d = new Date(STATE.bookingDate);
+  d.setDate(d.getDate() + delta);
+  STATE.bookingDate = d.toISOString().substring(0,10);
+  loadBookings();
+}
+async function loadBookings() {
+  const hotelId = STATE.hotel?.id;
+  if (!hotelId) return;
+  const isToday = STATE.bookingDate === today();
+  document.getElementById('bookingDateDisplay').textContent = isToday ? 'Today' : fmtDate(STATE.bookingDate + 'T00:00:00');
+  try {
+    const bookings = await api('GET', `/api/bookings/${hotelId}?date=${STATE.bookingDate}`);
+    if (!bookings.length) {
+      document.getElementById('bookingsList').innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No bookings on this day</div></div>`;
+      return;
+    }
+    let html = `<div class="section-title">📋 ${bookings.length} Booking${bookings.length > 1 ? 's' : ''}</div>`;
+    bookings.forEach(b => {
+      const pending = b.amount - b.payment_received;
+      const payTag = pending <= 0 ? '<span class="tag paid">PAID</span>' : (b.payment_received > 0 ? '<span class="tag partial">PARTIAL</span>' : '<span class="tag unpaid">UNPAID</span>');
+      html += `
+        <div class="card" style="padding:14px;margin-bottom:8px">
+          <div class="flex-between mb8">
+            <div>
+              <div style="font-size:16px;font-weight:700">Room ${b.room_number}</div>
+              <div style="font-size:13px;color:var(--text2)">${b.guest_name} ${b.guest_phone ? '· ' + b.guest_phone : ''}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:18px;font-weight:800">${fmt(b.amount)}</div>
+              <span class="tag ${b.booking_type}">${b.booking_type === 'hourly' ? '⏰ Hours' : '🌙 Nights'}</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">
+            Check-in: ${fmtDateTime(b.check_in)} ${b.expected_checkout ? '· Out: ' + fmtDateTime(b.expected_checkout) : ''}
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">
+            Paid: <strong class="${pending <= 0 ? 'text-green' : 'text-orange'}">${fmt(b.payment_received)}</strong>
+            · Pending: <strong class="${pending > 0 ? 'text-red' : 'text-green'}">${fmt(Math.max(0,pending))}</strong>
+            &nbsp; ${payTag} &nbsp; <span class="tag ${b.status}">${b.status === 'active' ? 'ACTIVE' : 'CHECKED OUT'}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3)">By ${b.staff_name}</div>
+        </div>`;
+    });
+    document.getElementById('bookingsList').innerHTML = html;
+  } catch(e) { showToast('Failed to load bookings', 'error'); }
+}
+
+// ===== EXPENSES SCREEN =====
+function changeExpenseDate(delta) {
+  const d = new Date(STATE.expenseDate);
+  d.setDate(d.getDate() + delta);
+  STATE.expenseDate = d.toISOString().substring(0,10);
+  loadExpenses();
+}
+async function loadExpenses() {
+  const hotelId = STATE.hotel?.id;
+  if (!hotelId) return;
+  const isToday = STATE.expenseDate === today();
+  document.getElementById('expenseDateDisplay').textContent = isToday ? 'Today' : fmtDate(STATE.expenseDate + 'T00:00:00');
+  try {
+    const expenses = await api('GET', `/api/expenses/${hotelId}?date=${STATE.expenseDate}`);
+    const total = expenses.reduce((s, e) => s + e.amount, 0);
+    if (!expenses.length) {
+      document.getElementById('expensesList').innerHTML = `<div class="empty-state"><div class="empty-icon">💸</div><div class="empty-text">No expenses on this day</div></div>`;
+      return;
+    }
+    let html = `<div class="card" style="padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:600;color:var(--text2)">Total Expenses</span><span style="font-size:20px;font-weight:800;color:var(--red)">${fmt(total)}</span></div>`;
+    expenses.forEach(e => {
+      const catIcons = { Cleaning:'🧹', Repair:'🔧', Electricity:'💡', Water:'💧', Supplies:'🛒', Laundry:'👕', Food:'🍽️', Salary:'👤', Other:'📦' };
+      html += `
+        <div class="list-item" style="padding:12px 0">
+          <div class="list-icon" style="background:var(--red-light)">${catIcons[e.category] || '📦'}</div>
+          <div class="list-body">
+            <div class="list-title">${e.category}</div>
+            <div class="list-sub">${e.description || ''} · ${e.staff_name}</div>
+          </div>
+          <div class="list-right">
+            <div class="list-amount text-red">${fmt(e.amount)}</div>
+            <div class="list-meta">${fmtDate(e.expense_date + 'T00:00:00')}</div>
+          </div>
+        </div>`;
+    });
+    document.getElementById('expensesList').innerHTML = `<div class="card">${html}</div>`;
+  } catch(e) { showToast('Failed to load expenses', 'error'); }
+}
+
+// ===== REPORT SCREEN =====
+let reportFrom = today(), reportTo = today(), reportHotelId = null;
+async function loadReport() {
+  reportHotelId = STATE.user.role === 'owner' ? STATE,ownerSelectedHotel : STATE.hotel?.id;
+  renderReportUI();
+}
+function renderReportUI() {
+  const isOwner = STATE.user.role === 'owner';
+  let html = `<div class="section-title">📊 Report</div>`;
+  if (isOwner) {
+    html += `<div class="hotel-tabs" id="reportHotelTabs">
+      ${[{id:'all',name:'All Hotels'},{id:1,name:'Vardan'},{id:2,name:'OY'},{id:3,name:'RR'}].map(h =>
+        `<button class="hotel-tab ${String(reportHotelId) === String(h.id) ? 'active' : ''}" onclick="reportHotelId='${h.id}';loadReportData()">${h.name}</button>`).join('')}
+    </div>`;
+  }
+  html += `
+    <div class="card mb12">
+      <div class="flex-between mb8"><span class="fw700 fs14">Date Range</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div><label class="fs12" style="color:var(--text2);font-weight:600">From</label><input type="date" class="form-input" id="reportFrom" value="${reportFrom}" style="margin-top:4px;padding:8px;font-size:13px"></div>
+        <div><label class="fs12" style="color:var(--text2);font-weight:600">To</label><input type="date" class="form-input" id="reportTo" value="${reportTo}" style="margin-top:4px;padding:8px;font-size:13px"></div>
+      </div>
+      <button class="btn-sm blue" onclick="reportFrom=document.getElementById('reportFrom').value;reportTo=document.getElementById('reportTo').value;loadReportData()">Show Report</button>
+    </div>
+    <div id="reportResults"></div>`;
+  document.getElementById('reportContent').innerHTML = html;
+  loadReportData();
+}
+async function loadReportData() {
+  const hId = reportHotelId === 'all' ? null : reportHotelId;
+  if (!hId && STATE.user.role !== 'owner') return;
+  if (!hId && STATE.user.role === 'owner') {
+    // Load all hotels
+    const hotels = [1,2,3];
+    try {
+      const results = await Promise.all(hotels.map(h => api('GET', `/api/reports/${h}?from=${reportFrom}&to=${reportTo}`)));
+      const combined = { bookings: [], expenses: [], summary: { totalBookings:0, totalRevenue:0, totalExpenses:0, netProfit:0 } };
+      results.forEach(r => { combined.bookings.push(...r.bookings); combined.expenses.push(...r.expenses); combined.summary.totalBookings += r.summary.totalBookings; combined.summary.totalRevenue += r.summary.totalRevenue; combined.summary.totalExpenses += r.summary.totalExpenses; combined.summary.netProfit += r.summary.netProfit; });
+      renderReportData(combined);
+    } catch(e) { showToast('Failed to load report', 'error'); }
+    return;
+  }
+  try {
+    const data = await api('GET', `/api/reports/${hId}?from=${reportFrom}&to=${reportTo}`);
+    renderReportData(data);
+  } catch(e) { showToast('Failed to load report', 'error'); }
+}
+function renderReportData(data) {
+  const s = data.summary;
+  let html = `
+    <div class="stats-row" style="grid-template-columns:repeat(2,1fr)">
+      <div class="stat-card green"><div class="stat-value">${fmt(s.totalRevenue)}</div><div class="stat-label">💰 Revenue</div></div>
+      <div class="stat-card red"><div class="stat-value">${fmt(s.totalExpenses)}</div><div class="stat-label">💸 Expenses</div></div>
+      <div class="stat-card blue"><div class="stat-value">${fmt(s.netProfit)}</div><div class="stat-label">📈 Net Profit</div></div>
+      <div class="stat-card orange"><div class="stat-value">${s.totalBookings}</div><div class="stat-label">📋 Bookings</div></div>
+    </div>`;
+
+  if (data.bookings.length) {
+    html += `<div class="card"><div class="section-title">📋 Bookings</div>`;
+    data.bookings.forEach(b => {
+      const pending = b.amount - b.payment_received;
+      html += `
+        <div class="report-row">
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700">Room ${b.room_number} · ${b.guest_name}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:3px">${fmtDateTime(b.check_in)} · <span class="tag ${b.booking_type}">${b.booking_type}</span> <span class="tag ${b.status}">${b.status}</span></div>
+            ${b.staff_name ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">By ${b.staff_name}</div>` : ''}
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:15px;font-weight:800">${fmt(b.amount)}</div>
+            ${pending > 0 ? `<div style="font-size:11px;color:var(--red)">Pending: ${fmt(pending)}</div>` : '<div style="font-size:11px;color:var(--green)">✓ Paid</div>'}
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (data.expenses.length) {
+    html += `<div class="card"><div class="section-title">💸 Expenses</div>`;
+    const catIcons = { Cleaning:'🧹', Repair:'🔧', Electricity:'💡', Water:'💧', Supplies:'🛒', Laundry:'👕', Food:'🍽️', Salary:'👤', Other:'📦' };
+    data.expenses.forEach(e => {
+      html += `
+        <div class="report-row">
+          <div style="font-size:20px">${catIcons[e.category]||'📦'}</div>
+          <div style="flex:1"><div style="font-size:14px;font-weight:600">${e.category}</div><div style="font-size:12px;color:var(--text2)">${e.description||''} · ${e.staff_name}</div></div>
+          <div style="font-size:15px;font-weight:700;color:var(--red)">${fmt(e.amount)}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (!data.bookings.length && !data.expenses.length) {
+    html += `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">No data for this period</div></div>`;
+  }
+
+  document.getElementById('reportResults').innerHTML = html;
+}
+
+// ===== OWNER DASHBOARD =====
+async function loadOwnerDashboard() {
+  document.getElementById('ownerContent').innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3)">Loading...</div>`;
+  try {
+    const data = await api('GET', '/api/owner/dashboard');
+    renderOwnerDashboard(data);
+  } catch(e) { showToast('Failed to load dashboard', 'error'); }
+}
+function renderOwnerDashboard(data) {
+  const t = data.totals;
+  const totalRooms = t.total;
+  const occupied   = t.occupied;
+
+  let html = `
+    <div class="summary-total">
+      <div class="big-lbl">Today's Total Revenue</div>
+      <div class="big-num">${fmt(t.revenue)}</div>
+      <div class="summary-row" style="margin-top:16px">
+        <div class="summary-pill"><div class="val">${fmt(t.expenses)}</div><div class="lbl">Expenses</div></div>
+        <div class="summary-pill"><div class="val">${fmt(t.net)}</div><div class="lbl">Net Profit</div></div>
+        <div class="summary-pill"><div class="val">${occupied}/${totalRooms}</div><div class="lbl">Occupied</div></div>
+      </div>
+    </div>
+
+    <button class="btn-sm outline" style="width:100%;margin-bottom:14px" onclick="loadOwnerDashboard()">🔄 Refresh</button>
+    <div class="section-title">🏨 Hotels</div>`;
+
+  const colors = ['#1e40af', '#16a34a', '#9333ea'];
+  data.hotels.forEach((h, i) => {
+    const alerts = h.unpaidCount + h.overdueCount;
+    html += `
+      <div class="hotel-overview-card">
+        <div class="hotel-card-header" style="background:${colors[i]}">
+          <h3>${h.hotel.name}</h3>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${alerts > 0 ? `<span style="background:var(--red);color:white;border-radius:99px;font-size:11px;font-weight:700;padding:2px 8px">⚠️ ${alerts} Alert${alerts>1?'s':''}</span>` : '<span style="background:rgba(255,255,255,0.2);color:white;border-radius:99px;font-size:11px;padding:2px 8px">✓ OK</span>'}
+          </div>
+        </div>
+        <div class="hotel-card-stats">
+          <div class="hcs"><div class="hcs-val text-green">${h.vacantRooms}</div><div class="hcs-lbl">Empty</div></div>
+          <div class="hcs"><div class="hcs-val text-red">${h.occupiedRooms}</div><div class="hcs-lbl">Occupied</div></div>
+          <div class="hcs"><div class="hcs-val text-blue">${fmt(h.todayRevenue)}</div><div class="hcs-lbl">Revenue</div></div>
+        </div>
+        ${h.unpaidCount > 0 ? `<div style="background:var(--red-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--red)">⚠️ ${h.unpaidCount} unpaid booking${h.unpaidCount>1?'s':''}</div>` : ''}
+        ${h.overdueCount > 0 ? `<div style="background:var(--orange-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--orange)">🕐 ${h.overdueCount} overdue checkout${h.overdueCount>1?'s':''}</div>` : ''}
+        ${h.recentBookings.length ? `
+        <div style="padding:12px 16px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Recent Bookings</div>
+          ${h.recentBookings.map(b => `
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)">
+              <span>Room ${b.room_number} · ${b.guest_name}</span>
+              <span class="fw700">${fmt(b.amount)}</span>
+            </div>`).join('')}
+        </div>` : ''}
+      </div>`;
+  });
+
+  document.getElementById('ownerContent').innerHTML = html;
+}
+
+// ===== CAMERAS SCREEN =====
+function loadCameras() {
+  const html = `
+    <div class="section-title">📹 CCTV Cameras</div>
+    <div class="card mb12" style="padding:16px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px">Hikvision NVR</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter your NVR address to view live camera feeds</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" class="form-input" id="nvrIp" placeholder="e.g. 192.168.1.64" style="flex:1">
+        <button class="btn-sm blue" onclick="connectNVR()">Connect</button>
+      </div>
+    </div>
+    <div id="cameraFeeds">
+      ${[
+        { hotel: 'Hotel Vardan',   label: 'Lobby / Floor Cams' },
+        { hotel: 'OY Hotel',       label: 'Lobby / Floor Cams' },
+        { hotel: 'RR Residency',   label: 'Lobby / Floor Cams' },
+      ].map(c => `
+        <div class="card mb12">
+          <div class="section-title" style="margin-bottom:10px">🏨 ${c.hotel}</div>
+          <div class="camera-placeholder">
+            <div class="cam-icon">📷</div>
+            <div class="cam-text">Connect NVR to view live feed</div>
+          </div>
+          <div style="font-size:12px;color:var(--text3);text-align:center">${c.label}</div>
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="section-title">⚠️ Camera Alerts</div>
+      <div style="font-size:13px;color:var(--text2)">Alerts will appear here once NVR is connected. Room activity will be cross-checked against bookings automatically.</div>
+    </div>`;
+  document.getElementById('camerasContent').innerHTML = html;
+}
+function connectNVR() {
+  const ip = document.getElementById('nvrIp').value.trim();
+  if (!ip) { showToast('Please enter NVR IP address', 'error'); return; }
+  showToast('Connecting to NVR...', '');
+  // This will be implemented with actual Hikvision ISAPI integration
+  setTimeout(() => showToast(`NVR at ${ip} — share with your installer to complete setup`, ''), 1500);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
+});
+
+// Init
+init();
+</script>
+</body>
+</html>
