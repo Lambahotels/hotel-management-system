@@ -465,6 +465,17 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   </div>
 </div>
 
+<!-- OWNER HOTEL DETAIL MODAL -->
+<div class="modal-overlay" id="ownerHotelDetailModal">
+  <div class="modal modal-owner">
+    <div class="modal-header">
+      <h2 id="ownerHotelDetailTitle">Hotel Detail</h2>
+      <button class="modal-close" onclick="closeModal('ownerHotelDetailModal')">&#x2715;</button>
+    </div>
+    <div id="ownerHotelDetailContent" style="padding-bottom:8px"></div>
+  </div>
+</div>
+
 <script>
 // ===== APP STATE =====
 var STATE = {
@@ -1075,38 +1086,173 @@ function renderOwnerDashboard(data) {
     '</div></div>' +
     '<button class="btn-sm outline" style="width:100%;margin-bottom:14px" onclick="loadOwnerDashboard()">Refresh</button>' +
     '<div class="section-title">Hotels</div>';
-  var colors = ['#1e40af', '#16a34a', '#9333ea'];
-  data.hotels.forEach(function(h, i) {
+  // Show Royal Residency first, then others
+  var hotelOrder = data.hotels.slice().sort(function(a, b) {
+    if (a.hotel.code === 'rr') return -1;
+    if (b.hotel.code === 'rr') return 1;
+    return 0;
+  });
+  var colorMap = { 'rr': '#9333ea', 'vardan': '#1e40af', 'oy': '#16a34a' };
+  hotelOrder.forEach(function(h, i) {
     var alerts = h.unpaidCount + h.overdueCount;
     var alertBadge = alerts > 0 ?
-      '<span style="background:var(--red);color:white;border-radius:99px;font-size:11px;font-weight:700;padding:2px 8px">Alerts: ' + alerts + '</span>' :
+      '<span onclick="event.stopPropagation();openOwnerHotelDetail(' + h.hotel.id + ',\'alerts\')" style="background:var(--red);color:white;border-radius:99px;font-size:11px;font-weight:700;padding:2px 10px;cursor:pointer">Alerts: ' + alerts + '</span>' :
       '<span style="background:rgba(255,255,255,0.2);color:white;border-radius:99px;font-size:11px;padding:2px 8px">OK</span>';
     var unpaidBanner = h.unpaidCount > 0 ?
-      '<div style="background:var(--red-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--red)">Unpaid: ' + h.unpaidCount + ' booking' + (h.unpaidCount > 1 ? 's' : '') + '</div>' : '';
+      '<div onclick="event.stopPropagation();openOwnerHotelDetail(' + h.hotel.id + ',\'alerts\')" style="background:var(--red-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--red);cursor:pointer">&#9888; Unpaid: ' + h.unpaidCount + ' booking' + (h.unpaidCount > 1 ? 's' : '') + ' &rsaquo;</div>' : '';
     var overdueBanner = h.overdueCount > 0 ?
-      '<div style="background:var(--orange-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--orange)">Overdue: ' + h.overdueCount + ' checkout' + (h.overdueCount > 1 ? 's' : '') + '</div>' : '';
+      '<div onclick="event.stopPropagation();openOwnerHotelDetail(' + h.hotel.id + ',\'alerts\')" style="background:var(--orange-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--orange);cursor:pointer">&#9201; Overdue: ' + h.overdueCount + ' checkout' + (h.overdueCount > 1 ? 's' : '') + ' &rsaquo;</div>' : '';
     var recentHtml = '';
     if (h.recentBookings.length) {
       recentHtml = '<div style="padding:12px 16px;border-top:1px solid var(--border)">' +
         '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Recent Bookings</div>';
       h.recentBookings.forEach(function(b) {
-        recentHtml += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)">' +
+        var pending = b.amount - b.payment_received;
+        var paidTag = pending <= 0 ? '<span style="color:var(--green);font-size:10px;font-weight:700">PAID</span>' : '<span style="color:var(--red);font-size:10px;font-weight:700">DUE: ' + fmt(pending) + '</span>';
+        recentHtml += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)">' +
           '<span>Room ' + b.room_number + ' - ' + b.guest_name + '</span>' +
-          '<span class="fw700">' + fmt(b.amount) + '</span></div>';
+          '<span style="display:flex;gap:6px;align-items:center">' + paidTag + '<span class="fw700">' + fmt(b.amount) + '</span></span></div>';
       });
       recentHtml += '</div>';
     }
-    html += '<div class="hotel-overview-card">' +
-      '<div class="hotel-card-header" style="background:' + colors[i] + '">' +
+    var netColor = h.netRevenue >= 0 ? 'text-green' : 'text-red';
+    html += '<div class="hotel-overview-card" onclick="openOwnerHotelDetail(' + h.hotel.id + ',\'overview\')">' +
+      '<div class="hotel-card-header" style="background:' + (colorMap[h.hotel.code] || '#1e40af') + '">' +
       '<h3>' + h.hotel.name + '</h3>' +
-      '<div style="display:flex;align-items:center;gap:8px">' + alertBadge + '</div></div>' +
+      '<div style="display:flex;align-items:center;gap:8px">' + alertBadge +
+      '<span style="background:rgba(255,255,255,0.2);color:white;border-radius:99px;font-size:11px;padding:2px 8px">&rsaquo;</span></div></div>' +
       '<div class="hotel-card-stats">' +
       '<div class="hcs"><div class="hcs-val text-green">' + h.vacantRooms + '</div><div class="hcs-lbl">Empty</div></div>' +
       '<div class="hcs"><div class="hcs-val text-red">' + h.occupiedRooms + '</div><div class="hcs-lbl">Occupied</div></div>' +
       '<div class="hcs"><div class="hcs-val text-blue">' + fmt(h.todayRevenue) + '</div><div class="hcs-lbl">Revenue</div></div>' +
+      '<div class="hcs"><div class="hcs-val text-orange">' + fmt(h.todayExpenses) + '</div><div class="hcs-lbl">Expenses</div></div>' +
+      '<div class="hcs"><div class="hcs-val ' + netColor + '">' + fmt(h.netRevenue) + '</div><div class="hcs-lbl">Net Profit</div></div>' +
       '</div>' + unpaidBanner + overdueBanner + recentHtml + '</div>';
   });
   document.getElementById('ownerContent').innerHTML = html;
+}
+
+// ===== OWNER HOTEL DETAIL =====
+var _ownerDetailData = null;
+async function openOwnerHotelDetail(hotelId, tab) {
+  tab = tab || 'overview';
+  openModal('ownerHotelDetailModal');
+  document.getElementById('ownerHotelDetailContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Loading...</div>';
+  try {
+    var dash = await api('GET', '/api/dashboard/' + hotelId);
+    var rooms = await api('GET', '/api/rooms/' + hotelId);
+    _ownerDetailData = { dash: dash, rooms: rooms, hotelId: hotelId };
+    document.getElementById('ownerHotelDetailTitle').textContent = dash.hotel.name;
+    renderOwnerHotelDetail(tab);
+  } catch(e) { document.getElementById('ownerHotelDetailContent').innerHTML = '<div style="padding:20px;color:var(--red)">Failed to load hotel details</div>'; }
+}
+function renderOwnerHotelDetail(tab) {
+  if (!_ownerDetailData) return;
+  var dash = _ownerDetailData.dash;
+  var rooms = _ownerDetailData.rooms;
+  var hotelId = _ownerDetailData.hotelId;
+  var s = dash.stats;
+  var alerts = dash.alerts;
+  // Tab bar
+  var tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'rooms', label: 'Rooms' },
+    { id: 'alerts', label: 'Alerts' + (alerts.unpaid.length + alerts.overdue.length > 0 ? ' (' + (alerts.unpaid.length + alerts.overdue.length) + ')' : '') },
+  ];
+  var tabHtml = '<div style="display:flex;gap:6px;margin-bottom:14px">';
+  tabs.forEach(function(t) {
+    var active = tab === t.id ? 'background:var(--primary);color:white' : 'background:var(--bg);color:var(--text2)';
+    tabHtml += '<button onclick="renderOwnerHotelDetail(\'' + t.id + '\')" style="flex:1;padding:8px 4px;font-size:12px;font-weight:700;border:none;border-radius:8px;cursor:pointer;' + active + '">' + t.label + '</button>';
+  });
+  tabHtml += '</div>';
+  var html = tabHtml;
+  if (tab === 'overview') {
+    var netColor = s.netRevenue >= 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">' +
+      '<div style="background:var(--green-light);border-radius:10px;padding:12px;text-align:center"><div style="font-size:16px;font-weight:800;color:var(--green)">' + fmt(s.todayRevenue) + '</div><div style="font-size:11px;color:var(--green-dark);font-weight:600">Revenue</div></div>' +
+      '<div style="background:var(--red-light);border-radius:10px;padding:12px;text-align:center"><div style="font-size:16px;font-weight:800;color:var(--red)">' + fmt(s.todayExpenses) + '</div><div style="font-size:11px;color:var(--red-dark);font-weight:600">Expenses</div></div>' +
+      '<div style="background:var(--blue-light);border-radius:10px;padding:12px;text-align:center"><div style="font-size:16px;font-weight:800;color:' + netColor + '">' + fmt(s.netRevenue) + '</div><div style="font-size:11px;color:var(--blue);font-weight:600">Net Profit</div></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:12px">' +
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:800;color:var(--green)">' + s.vacantRooms + '</div><div style="font-size:10px;color:var(--text2);font-weight:600">Empty</div></div>' +
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:800;color:var(--red)">' + s.occupiedRooms + '</div><div style="font-size:10px;color:var(--text2);font-weight:600">Occupied</div></div>' +
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:800;color:var(--blue)">' + s.todayBookings + '</div><div style="font-size:10px;color:var(--text2);font-weight:600">Bookings</div></div>' +
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:800;color:var(--text)">' + s.totalRooms + '</div><div style="font-size:10px;color:var(--text2);font-weight:600">Total</div></div>' +
+      '</div>';
+    // Unpaid bookings
+    if (alerts.unpaid.length) {
+      html += '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">&#9888; Unpaid Bookings</div>' +
+        '<div style="background:var(--card);border-radius:10px;overflow:hidden;margin-bottom:12px">';
+      alerts.unpaid.forEach(function(b) {
+        var pending = b.amount - b.payment_received;
+        html += '<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">' +
+          '<div><div style="font-size:13px;font-weight:700">Room ' + b.room_number + ' - ' + b.guest_name + '</div>' +
+          '<div style="font-size:11px;color:var(--text2)">In since: ' + fmtDateTime(b.check_in) + '</div></div>' +
+          '<div style="text-align:right"><div style="font-size:14px;font-weight:800;color:var(--red)">' + fmt(pending) + ' due</div>' +
+          '<div style="font-size:10px;color:var(--text3)">Total: ' + fmt(b.amount) + '</div></div></div>';
+      });
+      html += '</div>';
+    }
+  } else if (tab === 'rooms') {
+    var vacant = rooms.filter(function(r) { return r.status === 'vacant'; }).length;
+    var occupied = rooms.filter(function(r) { return r.status !== 'vacant'; }).length;
+    html += '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+      '<div style="flex:1;background:var(--green-light);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">' + vacant + '</div><div style="font-size:11px;color:var(--green-dark)">Empty</div></div>' +
+      '<div style="flex:1;background:var(--red-light);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">' + occupied + '</div><div style="font-size:11px;color:var(--red-dark)">Occupied</div></div>' +
+      '</div>';
+    var floors = {};
+    rooms.forEach(function(r) { if (!floors[r.floor]) floors[r.floor] = []; floors[r.floor].push(r); });
+    var floorNums = Object.keys(floors).map(Number).sort(function(a,b) { return b-a; });
+    html += '<div style="background:var(--card);border-radius:10px;overflow:hidden">';
+    floorNums.forEach(function(f) {
+      html += '<div style="padding:8px 14px;background:var(--bg);font-size:11px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border)">FLOOR ' + f + '</div>';
+      floors[f].forEach(function(r) {
+        var stColor = r.status === 'vacant' ? 'var(--green)' : (r.status === 'overdue' ? 'var(--orange)' : 'var(--red)');
+        var stLabel = r.status === 'vacant' ? 'Empty' : (r.status === 'overdue' ? 'Overdue' : 'Occupied');
+        var guestInfo = r.booking ? ' &mdash; ' + r.booking.guest_name + (r.booking.guest_phone ? ' (' + r.booking.guest_phone + ')' : '') : '';
+        var amtInfo = r.booking ? '<div style="font-size:11px;color:var(--text2)">Amount: ' + fmt(r.booking.amount) + ' &nbsp;|&nbsp; Paid: ' + fmt(r.booking.payment_received) + ' &nbsp;|&nbsp; Due: <span style="color:var(--red);font-weight:700">' + fmt(Math.max(0, r.booking.amount - r.booking.payment_received)) + '</span></div>' : '';
+        var checkinInfo = r.booking ? '<div style="font-size:11px;color:var(--text2)">In: ' + fmtDateTime(r.booking.check_in) + (r.booking.expected_checkout ? ' &nbsp; Out: ' + fmtDateTime(r.booking.expected_checkout) : '') + '</div>' : '';
+        html += '<div style="padding:10px 14px;border-bottom:1px solid var(--border)">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+          '<div style="font-size:14px;font-weight:700">Room ' + r.room_number + guestInfo + '</div>' +
+          '<span style="font-size:11px;font-weight:700;color:' + stColor + ';background:' + stColor.replace(')', '-light)').replace('var(--', 'var(--') + ';padding:2px 8px;border-radius:99px">' + stLabel + '</span>' +
+          '</div>' + checkinInfo + amtInfo + '</div>';
+      });
+    });
+    html += '</div>';
+  } else if (tab === 'alerts') {
+    var totalAlerts = alerts.unpaid.length + alerts.overdue.length;
+    if (!totalAlerts) {
+      html += '<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:12px">&#10003;</div><div style="font-size:16px;font-weight:700;color:var(--green)">All Clear!</div><div style="font-size:13px;color:var(--text2);margin-top:4px">No unpaid or overdue bookings</div></div>';
+    } else {
+      if (alerts.unpaid.length) {
+        html += '<div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px">Unpaid Bookings (' + alerts.unpaid.length + ')</div>' +
+          '<div style="background:var(--card);border-radius:10px;overflow:hidden;margin-bottom:14px">';
+        alerts.unpaid.forEach(function(b) {
+          var pending = b.amount - b.payment_received;
+          html += '<div style="padding:12px 14px;border-bottom:1px solid var(--border)">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">' +
+            '<div style="font-size:14px;font-weight:700">Room ' + b.room_number + ' - ' + b.guest_name + '</div>' +
+            '<div style="font-size:15px;font-weight:800;color:var(--red)">' + fmt(pending) + '</div></div>' +
+            '<div style="font-size:11px;color:var(--text2)">Checked in: ' + fmtDateTime(b.check_in) + '</div>' +
+            '<div style="font-size:11px;color:var(--text3)">Total: ' + fmt(b.amount) + ' &nbsp;|&nbsp; Paid: ' + fmt(b.payment_received) + '</div></div>';
+        });
+        html += '</div>';
+      }
+      if (alerts.overdue.length) {
+        html += '<div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:8px">Overdue Checkouts (' + alerts.overdue.length + ')</div>' +
+          '<div style="background:var(--card);border-radius:10px;overflow:hidden;margin-bottom:14px">';
+        alerts.overdue.forEach(function(b) {
+          html += '<div style="padding:12px 14px;border-bottom:1px solid var(--border)">' +
+            '<div style="font-size:14px;font-weight:700;color:var(--orange)">Room ' + b.room_number + ' - ' + b.guest_name + '</div>' +
+            '<div style="font-size:11px;color:var(--text2)">Expected checkout: ' + fmtDateTime(b.expected_checkout) + '</div>' +
+            '<div style="font-size:11px;color:var(--red);font-weight:600;margin-top:2px">Still occupied — guest has not checked out</div></div>';
+        });
+        html += '</div>';
+      }
+    }
+  }
+  document.getElementById('ownerHotelDetailContent').innerHTML = html;
 }
 
 // ===== CAMERAS SCREEN =====
