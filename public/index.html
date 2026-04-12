@@ -196,6 +196,20 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 /* Booking detail in modal */
 .booking-info-box { background: var(--bg); border-radius: 10px; padding: 12px; margin-bottom: 16px; }
+.id-proof-area { border: 2px dashed var(--border); border-radius: 10px; padding: 8px; cursor: pointer; min-height: 80px; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s; background: var(--bg); }
+.id-proof-area:hover { border-color: var(--primary); }
+.id-proof-area.has-image { padding: 8px; background: #f0f7ff; border-color: var(--primary); }
+.pay-mode-small { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 12px; }
+.pay-mode-cash { background: #dcfce7; color: #16a34a; }
+.pay-mode-online { background: #dbeafe; color: #1d4ed8; }
+.report-pay-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.report-pay-row:last-child { border-bottom: none; }
+.mode-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.mode-cash { background: #dcfce7; color: #166534; }
+.mode-upi { background: #ede9fe; color: #6d28d9; }
+.mode-card { background: #fef3c7; color: #92400e; }
+.mode-bank { background: #dbeafe; color: #1e40af; }
+.acct-detail { font-size: 11px; color: var(--text3); margin-top: 1px; }
 .booking-info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
 .booking-info-row .lbl { color: var(--text2); }
 .booking-info-row .val { font-weight: 600; }
@@ -369,6 +383,30 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
       <input type="text" class="form-input" id="bookingNotes" placeholder="Any extra notes">
     </div>
 
+    <div class="form-group">
+      <label>ID Proof Type *</label>
+      <div class="cat-grid" id="idProofTypeGrid">
+        <button class="cat-btn" onclick="selectIdProofType(this,'Aadhar')">🪪 Aadhar</button>
+        <button class="cat-btn" onclick="selectIdProofType(this,'PAN')">🗂 PAN Card</button>
+        <button class="cat-btn" onclick="selectIdProofType(this,'Passport')">📕 Passport</button>
+        <button class="cat-btn" onclick="selectIdProofType(this,'DL')">🚗 Driving Licence</button>
+        <button class="cat-btn" onclick="selectIdProofType(this,'Voter ID')">🗳 Voter ID</button>
+        <button class="cat-btn" onclick="selectIdProofType(this,'Other')">📄 Other</button>
+      </div>
+    </div>
+    <div class="form-group" id="idProofUploadGroup">
+      <label>Upload / Capture ID Proof *</label>
+      <div class="id-proof-area" id="idProofArea" onclick="document.getElementById('idProofFileInput').click()">
+        <div id="idProofPlaceholder" style="text-align:center;color:var(--text3);padding:18px 0">
+          <div style="font-size:28px;margin-bottom:6px">📷</div>
+          <div style="font-size:13px">Tap to take photo or upload image</div>
+        </div>
+        <img id="idProofPreview" style="display:none;max-width:100%;max-height:180px;border-radius:8px;object-fit:contain">
+      </div>
+      <input type="file" id="idProofFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleIdProofUpload(this)">
+      <div id="idProofError" style="color:var(--red);font-size:12px;margin-top:4px;display:none">ID proof is required</div>
+    </div>
+
     <button class="btn-primary" onclick="submitBooking()">Confirm Booking</button>
   </div>
 </div>
@@ -383,7 +421,11 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
     <div class="booking-info-box" id="paymentBookingInfo"></div>
     <div class="form-group">
       <label>Amount Received (₹) *</label>
-      <input type="number" class="form-input" id="paymentAmount" placeholder="Enter amount" min="0" inputmode="numeric">
+      <input type="number" class="form-input" id="paymentAmount" placeholder="Enter amount" min="0" inputmode="numeric" oninput="updatePaymentBalance()">
+    </div>
+    <div id="paymentBalanceInfo" style="display:none;margin:-4px 0 10px;padding:8px 12px;border-radius:8px;background:var(--bg2);font-size:13px">
+      <span style="color:var(--text2)">Remaining after this payment: </span>
+      <span id="paymentBalanceAmt" style="font-weight:700;color:var(--red)">₹0</span>
     </div>
     <div class="form-group">
       <label>Payment Mode</label>
@@ -391,11 +433,22 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
         <button class="pay-mode-btn active" onclick="setPayMode(this,'Cash')">💵 Cash</button>
         <button class="pay-mode-btn" onclick="setPayMode(this,'UPI')">📱 UPI</button>
         <button class="pay-mode-btn" onclick="setPayMode(this,'Card')">💳 Card</button>
+        <button class="pay-mode-btn" onclick="setPayMode(this,'Bank Transfer')">🏦 Bank</button>
+      </div>
+    </div>
+    <div id="onlinePayDetails" style="display:none">
+      <div class="form-group">
+        <label>Account Holder Name</label>
+        <input type="text" class="form-input" id="payAccountHolder" placeholder="Name on account/UPI">
+      </div>
+      <div class="form-group">
+        <label>Last 4 Digits of Account / UPI Ref</label>
+        <input type="text" class="form-input" id="payAccountLast4" placeholder="e.g. 4521 or last 4 of UPI ref" maxlength="10" inputmode="numeric">
       </div>
     </div>
     <div class="form-group">
       <label>Notes (optional)</label>
-      <input type="text" class="form-input" id="paymentNotes" placeholder="e.g. Partial payment">
+      <input type="text" class="form-input" id="paymentNotes" placeholder="e.g. Partial payment, advance">
     </div>
     <button class="btn-primary" onclick="submitPayment()">Save Payment</button>
   </div>
@@ -434,6 +487,25 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
       <label>Date</label>
       <input type="date" class="form-input" id="expenseDate">
     </div>
+    <div class="form-group">
+      <label>Payment Mode</label>
+      <div class="pay-modes">
+        <button class="pay-mode-btn active" id="expPayMode_Cash" onclick="setExpensePayMode(this,'Cash')">💵 Cash</button>
+        <button class="pay-mode-btn" id="expPayMode_UPI" onclick="setExpensePayMode(this,'UPI')">📱 UPI</button>
+        <button class="pay-mode-btn" id="expPayMode_Card" onclick="setExpensePayMode(this,'Card')">💳 Card</button>
+        <button class="pay-mode-btn" id="expPayMode_Bank" onclick="setExpensePayMode(this,'Bank Transfer')">🏦 Bank</button>
+      </div>
+    </div>
+    <div id="expOnlinePayDetails" style="display:none">
+      <div class="form-group">
+        <label>Account Holder Name</label>
+        <input type="text" class="form-input" id="expAccountHolder" placeholder="Name on account/UPI">
+      </div>
+      <div class="form-group">
+        <label>Last 4 Digits / UPI Ref</label>
+        <input type="text" class="form-input" id="expAccountLast4" placeholder="e.g. 4521" maxlength="10" inputmode="numeric">
+      </div>
+    </div>
     <button class="btn-primary" onclick="submitExpense()">Save Expense</button>
   </div>
 </div>
@@ -462,6 +534,32 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
         <button class="btn-primary" style="flex:1" onclick="doLogout()">Logout</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- CUSTOMER SEARCH MODAL -->
+<div class="modal-overlay" id="customerSearchModal">
+  <div class="modal modal-owner">
+    <div class="modal-header">
+      <h2>Customer Lookup</h2>
+      <button class="modal-close" onclick="closeModal('customerSearchModal')">&#x2715;</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="text" class="form-input" id="customerSearchInput" placeholder="Search by name or phone..." style="flex:1" oninput="scheduleCustomerSearch()">
+      <button class="btn-sm blue" onclick="runCustomerSearch()" style="padding:10px 14px">Search</button>
+    </div>
+    <div id="customerSearchResults"></div>
+  </div>
+</div>
+
+<!-- ID PROOF VIEWER MODAL -->
+<div class="modal-overlay" id="idProofViewerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="idProofViewerTitle">ID Proof</h2>
+      <button class="modal-close" onclick="closeModal('idProofViewerModal')">&#x2715;</button>
+    </div>
+    <div id="idProofViewerContent" style="text-align:center;padding:8px 0"></div>
   </div>
 </div>
 
@@ -579,23 +677,26 @@ function buildNav() {
   var nav = document.getElementById('bottomNav');
   var isOwner = STATE.user.role === 'owner';
   var staffItems = [
-    { id: 'rooms',    label: 'Rooms' },
-    { id: 'bookings', label: 'Bookings' },
-    { id: 'expenses', label: 'Expenses' },
-    { id: 'report',   label: 'Report' },
+    { id: 'rooms',    label: 'Rooms',    icon: '🏨' },
+    { id: 'bookings', label: 'Bookings', icon: '📋' },
+    { id: 'expenses', label: 'Expenses', icon: '💸' },
+    { id: 'report',   label: 'Report',   icon: '📊' },
+    { id: 'search',   label: 'Search',   icon: '🔍' },
   ];
   var ownerItems = [
-    { id: 'owner',    label: 'Hotels' },
-    { id: 'report',   label: 'Report' },
-    { id: 'cameras',  label: 'Cameras' },
+    { id: 'owner',    label: 'Hotels',   icon: '🏨' },
+    { id: 'report',   label: 'Report',   icon: '📊' },
+    { id: 'search',   label: 'Search',   icon: '🔍' },
+    { id: 'cameras',  label: 'Cameras',  icon: '📷' },
   ];
   var items = isOwner ? ownerItems : staffItems;
   var html = '';
   for (var i = 0; i < items.length; i++) {
     var item = items[i];
     var activeClass = STATE.currentScreen === item.id ? ' active' : '';
-    html += '<button class="nav-item' + activeClass + '" onclick="switchScreen(\'' + item.id + '\')">' +
-      '<span class="nav-icon">' + item.label.substring(0,1) + '</span>' +
+    var onclick = item.id === 'search' ? 'openCustomerSearch()' : 'switchScreen(\'' + item.id + '\')';
+    html += '<button class="nav-item' + activeClass + '" onclick="' + onclick + '">' +
+      '<span class="nav-icon">' + (item.icon || item.label.substring(0,1)) + '</span>' +
       '<span class="nav-label">' + item.label + '</span></button>';
   }
   nav.innerHTML = html;
@@ -614,6 +715,7 @@ function switchScreen(name) {
   else if (name === 'report') loadReport();
   else if (name === 'owner') loadOwnerDashboard();
   else if (name === 'cameras') loadCameras();
+  else if (name === 'search') openCustomerSearch();
 }
 
 // ===== ROOMS SCREEN =====
@@ -728,6 +830,8 @@ function openBookingForm(roomId) {
   var room = STATE.rooms.find(function(r) { return r.id === roomId; });
   STATE.activeRoomId = roomId;
   STATE.activeHotelId = STATE.hotel ? STATE.hotel.id : null;
+  STATE.currentIdProofType = null;
+  STATE.currentIdProofData = null;
   document.getElementById('bookingModalTitle').textContent = 'Book Room ' + (room ? room.room_number : '');
   document.getElementById('guestName').value = '';
   document.getElementById('guestPhone').value = '';
@@ -738,8 +842,47 @@ function openBookingForm(roomId) {
   document.getElementById('expectedCheckout').value = '';
   document.getElementById('checkInDate').value = today();
   document.getElementById('numNights').value = '1';
+  // Reset ID proof
+  document.querySelectorAll('#idProofTypeGrid .cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('idProofPreview').style.display = 'none';
+  document.getElementById('idProofPlaceholder').style.display = '';
+  document.getElementById('idProofArea').classList.remove('has-image');
+  document.getElementById('idProofError').style.display = 'none';
+  document.getElementById('idProofFileInput').value = '';
   setBookingType('hourly');
   openModal('bookingModal');
+}
+
+function selectIdProofType(btn, type) {
+  STATE.currentIdProofType = type;
+  document.querySelectorAll('#idProofTypeGrid .cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+
+function handleIdProofUpload(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      // Resize to max 1024px wide for storage efficiency
+      var maxW = 1024;
+      var scale = img.width > maxW ? maxW / img.width : 1;
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      STATE.currentIdProofData = canvas.toDataURL('image/jpeg', 0.8);
+      document.getElementById('idProofPreview').src = STATE.currentIdProofData;
+      document.getElementById('idProofPreview').style.display = '';
+      document.getElementById('idProofPlaceholder').style.display = 'none';
+      document.getElementById('idProofArea').classList.add('has-image');
+      document.getElementById('idProofError').style.display = 'none';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function setBookingType(type) {
@@ -755,28 +898,32 @@ async function submitBooking() {
   var amount    = document.getElementById('bookingAmount').value;
   if (!guestName) { showToast('Please enter guest name', 'error'); return; }
   if (!amount || parseFloat(amount) < 0) { showToast('Please enter amount', 'error'); return; }
+  if (!STATE.currentIdProofType) { showToast('Please select ID proof type', 'error'); return; }
+  if (!STATE.currentIdProofData) {
+    document.getElementById('idProofError').style.display = '';
+    showToast('Please capture or upload ID proof', 'error');
+    return;
+  }
   var type = STATE.currentBookingType;
+  var base = { room_id: STATE.activeRoomId, hotel_id: STATE.activeHotelId,
+    guest_name: guestName, guest_phone: document.getElementById('guestPhone').value,
+    amount: amount, notes: document.getElementById('bookingNotes').value,
+    id_proof: STATE.currentIdProofData, id_proof_type: STATE.currentIdProofType };
   var body;
   if (type === 'hourly') {
     var checkIn = document.getElementById('checkInTime').value;
     if (!checkIn) { showToast('Please enter check-in time', 'error'); return; }
-    body = { room_id: STATE.activeRoomId, hotel_id: STATE.activeHotelId,
-      guest_name: guestName, guest_phone: document.getElementById('guestPhone').value,
-      booking_type: 'hourly', check_in: checkIn,
+    body = Object.assign({}, base, { booking_type: 'hourly', check_in: checkIn,
       expected_checkout: document.getElementById('expectedCheckout').value || null,
-      duration_label: document.getElementById('durationLabel').value || null,
-      amount: amount, notes: document.getElementById('bookingNotes').value };
+      duration_label: document.getElementById('durationLabel').value || null });
   } else {
     var nights = parseInt(document.getElementById('numNights').value);
     var ciDate = document.getElementById('checkInDate').value;
     var coDate = new Date(ciDate);
     coDate.setDate(coDate.getDate() + nights);
     var durLabel = nights + ' Night' + (nights > 1 ? 's' : '');
-    body = { room_id: STATE.activeRoomId, hotel_id: STATE.activeHotelId,
-      guest_name: guestName, guest_phone: document.getElementById('guestPhone').value,
-      booking_type: 'nightly', check_in: ciDate + ' 12:00:00',
-      expected_checkout: coDate.toISOString().substring(0,10) + ' 11:00:00',
-      duration_label: durLabel, amount: amount, notes: document.getElementById('bookingNotes').value };
+    body = Object.assign({}, base, { booking_type: 'nightly', check_in: ciDate + ' 12:00:00',
+      expected_checkout: coDate.toISOString().substring(0,10) + ' 11:00:00', duration_label: durLabel });
   }
   try {
     await api('POST', '/api/bookings', body);
@@ -789,38 +936,66 @@ async function submitBooking() {
 // ===== PAYMENT MODAL =====
 function openPaymentModal(bookingId) {
   STATE.activeBookingId = bookingId;
+  STATE.activeBookingTotal = 0;
+  STATE.activeBookingPaid = 0;
   document.getElementById('paymentAmount').value = '';
   document.getElementById('paymentNotes').value = '';
+  document.getElementById('payAccountHolder').value = '';
+  document.getElementById('payAccountLast4').value = '';
+  document.getElementById('paymentBalanceInfo').style.display = 'none';
+  document.getElementById('onlinePayDetails').style.display = 'none';
   STATE.currentPayMode = 'Cash';
-  document.querySelectorAll('.pay-mode-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelectorAll('.pay-mode-btn')[0].classList.add('active');
+  document.querySelectorAll('#paymentModal .pay-mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('#paymentModal .pay-mode-btn')[0].classList.add('active');
   var room = STATE.rooms.find(function(r) { return r.booking && r.booking.id === bookingId; });
   if (room) {
     var b = room.booking;
+    STATE.activeBookingTotal = b.amount;
+    STATE.activeBookingPaid = b.payment_received;
     var pending = b.amount - b.payment_received;
     document.getElementById('paymentBookingInfo').innerHTML =
       '<div class="booking-info-row"><span class="lbl">Guest</span><span class="val">' + b.guest_name + '</span></div>' +
       '<div class="booking-info-row"><span class="lbl">Room</span><span class="val">' + room.room_number + '</span></div>' +
       '<div class="booking-info-row"><span class="lbl">Total Amount</span><span class="val fw700">' + fmt(b.amount) + '</span></div>' +
       '<div class="booking-info-row"><span class="lbl">Already Paid</span><span class="val text-green">' + fmt(b.payment_received) + '</span></div>' +
-      '<div class="booking-info-row"><span class="lbl">Remaining</span><span class="val text-red fw700">' + fmt(Math.max(0, pending)) + '</span></div>';
-    if (pending > 0) document.getElementById('paymentAmount').value = pending;
+      '<div class="booking-info-row"><span class="lbl">Balance Due</span><span class="val text-red fw700">' + fmt(Math.max(0, pending)) + '</span></div>';
+    if (pending > 0) { document.getElementById('paymentAmount').value = pending; updatePaymentBalance(); }
   }
   openModal('paymentModal');
 }
 
+function updatePaymentBalance() {
+  var entering = parseFloat(document.getElementById('paymentAmount').value) || 0;
+  var pending = STATE.activeBookingTotal - STATE.activeBookingPaid;
+  var remaining = Math.max(0, pending - entering);
+  var info = document.getElementById('paymentBalanceInfo');
+  var amt  = document.getElementById('paymentBalanceAmt');
+  if (entering > 0 && pending > 0) {
+    info.style.display = '';
+    amt.textContent = fmt(remaining);
+    amt.style.color = remaining <= 0 ? 'var(--green)' : 'var(--red)';
+    amt.textContent = remaining <= 0 ? 'Fully Paid ✓' : fmt(remaining);
+  } else { info.style.display = 'none'; }
+}
+
 function setPayMode(btn, mode) {
   STATE.currentPayMode = mode;
-  document.querySelectorAll('.pay-mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('#paymentModal .pay-mode-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
+  document.getElementById('onlinePayDetails').style.display = (mode !== 'Cash') ? '' : 'none';
 }
 
 async function submitPayment() {
   var amount = document.getElementById('paymentAmount').value;
   if (!amount || parseFloat(amount) <= 0) { showToast('Please enter amount', 'error'); return; }
+  var body = { booking_id: STATE.activeBookingId, amount: parseFloat(amount),
+    payment_mode: STATE.currentPayMode, notes: document.getElementById('paymentNotes').value };
+  if (STATE.currentPayMode !== 'Cash') {
+    body.account_holder = document.getElementById('payAccountHolder').value.trim() || null;
+    body.account_last4  = document.getElementById('payAccountLast4').value.trim() || null;
+  }
   try {
-    await api('POST', '/api/payments', { booking_id: STATE.activeBookingId, amount: parseFloat(amount),
-      payment_mode: STATE.currentPayMode, notes: document.getElementById('paymentNotes').value });
+    await api('POST', '/api/payments', body);
     closeModal('paymentModal');
     showToast('Payment saved!', 'success');
     loadRooms();
@@ -861,10 +1036,16 @@ async function confirmCheckout() {
 // ===== EXPENSE MODAL =====
 function openExpenseModal() {
   STATE.currentExpenseCat = null;
+  STATE.currentExpensePayMode = 'Cash';
   document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById('expenseDesc').value = '';
   document.getElementById('expenseAmount').value = '';
   document.getElementById('expenseDate').value = today();
+  document.getElementById('expAccountHolder').value = '';
+  document.getElementById('expAccountLast4').value = '';
+  document.getElementById('expOnlinePayDetails').style.display = 'none';
+  document.querySelectorAll('#expenseModal .pay-mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('expPayMode_Cash').classList.add('active');
   openModal('expenseModal');
 }
 function selectCat(btn, cat) {
@@ -872,14 +1053,27 @@ function selectCat(btn, cat) {
   document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
 }
+function setExpensePayMode(btn, mode) {
+  STATE.currentExpensePayMode = mode;
+  document.querySelectorAll('#expenseModal .pay-mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('expOnlinePayDetails').style.display = (mode !== 'Cash') ? '' : 'none';
+}
 async function submitExpense() {
   if (!STATE.currentExpenseCat) { showToast('Please select a category', 'error'); return; }
   var amount = document.getElementById('expenseAmount').value;
   if (!amount || parseFloat(amount) <= 0) { showToast('Please enter amount', 'error'); return; }
+  var mode = STATE.currentExpensePayMode || 'Cash';
+  var body = { hotel_id: STATE.hotel ? STATE.hotel.id : null,
+    category: STATE.currentExpenseCat, description: document.getElementById('expenseDesc').value,
+    amount: parseFloat(amount), expense_date: document.getElementById('expenseDate').value,
+    payment_mode: mode };
+  if (mode !== 'Cash') {
+    body.account_holder = document.getElementById('expAccountHolder').value.trim() || null;
+    body.account_last4  = document.getElementById('expAccountLast4').value.trim() || null;
+  }
   try {
-    await api('POST', '/api/expenses', { hotel_id: STATE.hotel ? STATE.hotel.id : null,
-      category: STATE.currentExpenseCat, description: document.getElementById('expenseDesc').value,
-      amount: parseFloat(amount), expense_date: document.getElementById('expenseDate').value });
+    await api('POST', '/api/expenses', body);
     closeModal('expenseModal');
     showToast('Expense added!', 'success');
     loadExpenses();
@@ -981,7 +1175,7 @@ function renderReportUI() {
   var isOwner = STATE.user.role === 'owner';
   var html = '<div class="section-title">Report</div>';
   if (isOwner) {
-    var tabs = [{id:'all',name:'All Hotels'},{id:1,name:'Vardan'},{id:2,name:'OY'},{id:3,name:'RR'}];
+    var tabs = [{id:'all',name:'All Hotels'},{id:1,name:'Vardan'},{id:2,name:'OY'},{id:3,name:'Royal Res.'}];
     html += '<div class="hotel-tabs" id="reportHotelTabs">';
     tabs.forEach(function(h) {
       var activeClass = String(reportHotelId) === String(h.id) ? ' active' : '';
@@ -1007,14 +1201,19 @@ async function loadReportData() {
     var hotels = [1,2,3];
     try {
       var results = await Promise.all(hotels.map(function(h) { return api('GET', '/api/reports/' + h + '?from=' + reportFrom + '&to=' + reportTo); }));
-      var combined = { bookings: [], expenses: [], summary: { totalBookings:0, totalRevenue:0, totalExpenses:0, netProfit:0 } };
+      var combined = { bookings: [], expenses: [], payments: [], summary: { totalBookings:0, totalRevenue:0, totalExpenses:0, netProfit:0, cashRevenue:0, onlineRevenue:0, cashExpenses:0, onlineExpenses:0 } };
       results.forEach(function(r) {
         combined.bookings = combined.bookings.concat(r.bookings);
         combined.expenses = combined.expenses.concat(r.expenses);
+        combined.payments = combined.payments.concat(r.payments || []);
         combined.summary.totalBookings += r.summary.totalBookings;
         combined.summary.totalRevenue += r.summary.totalRevenue;
         combined.summary.totalExpenses += r.summary.totalExpenses;
         combined.summary.netProfit += r.summary.netProfit;
+        combined.summary.cashRevenue += (r.summary.cashRevenue || 0);
+        combined.summary.onlineRevenue += (r.summary.onlineRevenue || 0);
+        combined.summary.cashExpenses += (r.summary.cashExpenses || 0);
+        combined.summary.onlineExpenses += (r.summary.onlineExpenses || 0);
       });
       renderReportData(combined);
     } catch(e) { showToast('Failed to load report', 'error'); }
@@ -1025,6 +1224,20 @@ async function loadReportData() {
     renderReportData(data);
   } catch(e) { showToast('Failed to load report', 'error'); }
 }
+function modeClass(mode) {
+  if (!mode || mode === 'Cash') return 'mode-cash';
+  if (mode === 'UPI') return 'mode-upi';
+  if (mode === 'Card') return 'mode-card';
+  return 'mode-bank';
+}
+function acctDetail(p) {
+  if (!p || p.payment_mode === 'Cash') return '';
+  var parts = [];
+  if (p.account_holder) parts.push(p.account_holder);
+  if (p.account_last4) parts.push('****' + p.account_last4);
+  return parts.length ? '<div class="acct-detail">' + parts.join(' | ') + '</div>' : '';
+}
+
 function renderReportData(data) {
   var s = data.summary;
   var html = '<div class="stats-row" style="grid-template-columns:repeat(2,1fr)">' +
@@ -1033,15 +1246,56 @@ function renderReportData(data) {
     '<div class="stat-card blue"><div class="stat-value">' + fmt(s.netProfit) + '</div><div class="stat-label">Net Profit</div></div>' +
     '<div class="stat-card orange"><div class="stat-value">' + s.totalBookings + '</div><div class="stat-label">Bookings</div></div>' +
     '</div>';
+
+  // Revenue breakdown: Cash vs Online
+  if (s.totalRevenue > 0 || s.totalExpenses > 0) {
+    html += '<div class="card" style="padding:12px 14px;margin-bottom:8px">' +
+      '<div class="section-title" style="margin-bottom:8px">Payment Breakdown</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+      '<div style="background:#dcfce7;border-radius:10px;padding:10px;text-align:center">' +
+        '<div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px">💵 CASH RECEIVED</div>' +
+        '<div style="font-size:18px;font-weight:800;color:#166534">' + fmt(s.cashRevenue || 0) + '</div></div>' +
+      '<div style="background:#dbeafe;border-radius:10px;padding:10px;text-align:center">' +
+        '<div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:4px">📱 ONLINE RECEIVED</div>' +
+        '<div style="font-size:18px;font-weight:800;color:#1e40af">' + fmt(s.onlineRevenue || 0) + '</div></div>' +
+      '<div style="background:#fef2f2;border-radius:10px;padding:10px;text-align:center">' +
+        '<div style="font-size:11px;font-weight:700;color:#991b1b;margin-bottom:4px">💵 CASH EXPENSE</div>' +
+        '<div style="font-size:18px;font-weight:800;color:#991b1b">' + fmt(s.cashExpenses || 0) + '</div></div>' +
+      '<div style="background:#fef3c7;border-radius:10px;padding:10px;text-align:center">' +
+        '<div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:4px">📱 ONLINE EXPENSE</div>' +
+        '<div style="font-size:18px;font-weight:800;color:#92400e">' + fmt(s.onlineExpenses || 0) + '</div></div>' +
+      '</div></div>';
+  }
+
+  // Payments list with mode
+  if (data.payments && data.payments.length) {
+    html += '<div class="card"><div class="section-title">Payments Received</div>';
+    data.payments.forEach(function(p) {
+      var mode = p.payment_mode || 'Cash';
+      html += '<div class="report-pay-row">' +
+        '<div style="flex:1">' +
+        '<div style="font-size:13px;font-weight:700">Room ' + p.room_number + ' — ' + p.guest_name + '</div>' +
+        '<div style="margin-top:2px">' +
+          '<span class="mode-badge ' + modeClass(p) + '">' + mode + '</span>' +
+          acctDetail(p) +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--text3)">' + fmtDateTime(p.created_at) + (p.notes ? ' · ' + p.notes : '') + '</div>' +
+        '</div>' +
+        '<div style="font-size:15px;font-weight:800;color:var(--green);flex-shrink:0;text-align:right">' + fmt(p.amount) + '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+  }
+
   if (data.bookings.length) {
     html += '<div class="card"><div class="section-title">Bookings</div>';
     data.bookings.forEach(function(b) {
       var pending = b.amount - b.payment_received;
-      var pendingHtml = pending > 0 ? '<div style="font-size:11px;color:var(--red)">Pending: ' + fmt(pending) + '</div>' : '<div style="font-size:11px;color:var(--green)">Paid</div>';
-      var staffDiv = b.staff_name ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">By ' + b.staff_name + '</div>' : '';
+      var pendingHtml = pending > 0 ? '<div style="font-size:11px;color:var(--red)">Due: ' + fmt(pending) + '</div>' : '<div style="font-size:11px;color:var(--green)">✓ Paid</div>';
+      var staffDiv = b.staff_name ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">By ' + b.staff_name + (b.id_proof_type ? ' · ID: ' + b.id_proof_type : '') + '</div>' : '';
       html += '<div class="report-row">' +
         '<div style="flex:1">' +
-        '<div style="font-size:14px;font-weight:700">Room ' + b.room_number + ' - ' + b.guest_name + '</div>' +
+        '<div style="font-size:14px;font-weight:700">Room ' + b.room_number + ' - ' + b.guest_name + (b.guest_phone ? ' · ' + b.guest_phone : '') + '</div>' +
         '<div style="font-size:11px;color:var(--text2);margin-top:3px">' + fmtDateTime(b.check_in) +
         ' <span class="tag ' + b.booking_type + '">' + b.booking_type + '</span> <span class="tag ' + b.status + '">' + b.status + '</span></div>' +
         staffDiv + '</div>' +
@@ -1053,17 +1307,88 @@ function renderReportData(data) {
     html += '<div class="card"><div class="section-title">Expenses</div>';
     data.expenses.forEach(function(e) {
       var desc = e.description || '';
+      var mode = e.payment_mode || 'Cash';
       html += '<div class="report-row">' +
-        '<div style="flex:1"><div style="font-size:14px;font-weight:600">' + e.category + '</div>' +
-        '<div style="font-size:12px;color:var(--text2)">' + (desc ? desc + ' - ' : '') + e.staff_name + '</div></div>' +
-        '<div style="font-size:15px;font-weight:700;color:var(--red)">' + fmt(e.amount) + '</div></div>';
+        '<div style="flex:1"><div style="font-size:14px;font-weight:600">' + e.category + (desc ? ' · ' + desc : '') + '</div>' +
+        '<div style="margin-top:2px"><span class="mode-badge ' + modeClass(e) + '">' + mode + '</span>' + acctDetail(e) + '</div>' +
+        '<div style="font-size:11px;color:var(--text3)">' + e.staff_name + ' · ' + e.expense_date + '</div></div>' +
+        '<div style="font-size:15px;font-weight:700;color:var(--red);flex-shrink:0">' + fmt(e.amount) + '</div></div>';
     });
     html += '</div>';
   }
-  if (!data.bookings.length && !data.expenses.length) {
+  if (!data.bookings.length && !(data.payments && data.payments.length) && !data.expenses.length) {
     html += '<div class="empty-state"><div class="empty-icon">&#128202;</div><div class="empty-text">No data for this period</div></div>';
   }
   document.getElementById('reportResults').innerHTML = html;
+}
+
+// ===== CUSTOMER SEARCH =====
+var _customerSearchTimer = null;
+function openCustomerSearch() {
+  document.getElementById('customerSearchInput').value = '';
+  document.getElementById('customerSearchResults').innerHTML = '<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Enter a name or phone number to search</div>';
+  openModal('customerSearchModal');
+}
+function scheduleCustomerSearch() {
+  clearTimeout(_customerSearchTimer);
+  _customerSearchTimer = setTimeout(runCustomerSearch, 400);
+}
+async function runCustomerSearch() {
+  var q = document.getElementById('customerSearchInput').value.trim();
+  if (q.length < 2) {
+    document.getElementById('customerSearchResults').innerHTML = '<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Type at least 2 characters</div>';
+    return;
+  }
+  document.getElementById('customerSearchResults').innerHTML = '<div style="text-align:center;color:var(--text3);padding:24px">Searching...</div>';
+  try {
+    var url = '/api/customers/search?q=' + encodeURIComponent(q);
+    if (STATE.hotel) url += '&hotel_id=' + STATE.hotel.id;
+    var results = await api('GET', url);
+    if (!results.length) {
+      document.getElementById('customerSearchResults').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128269;</div><div class="empty-text">No customers found for "' + q + '"</div></div>';
+      return;
+    }
+    var html = '<div style="font-size:12px;color:var(--text3);margin-bottom:8px">' + results.length + ' result(s)</div>';
+    results.forEach(function(b) {
+      var pending = b.amount - b.payment_received;
+      var payTag = pending <= 0 ? '<span class="tag paid">PAID</span>' : (b.payment_received > 0 ? '<span class="tag partial">PARTIAL</span>' : '<span class="tag unpaid">UNPAID</span>');
+      var statusTag = b.status === 'active' ? '<span class="tag active">ACTIVE</span>' : '<span class="tag checked_out">CHECKED OUT</span>';
+      html += '<div class="card" style="padding:12px;margin-bottom:8px;cursor:pointer" onclick="viewCustomerDetail(' + b.id + ',\'' + b.guest_name.replace(/'/g,'') + '\')">' +
+        '<div class="flex-between mb4">' +
+        '<div><div style="font-size:15px;font-weight:700">' + b.guest_name + '</div>' +
+        '<div style="font-size:12px;color:var(--text2)">' + (b.guest_phone || 'No phone') + ' · ' + b.hotel_name + '</div></div>' +
+        '<div style="text-align:right">' + statusTag + ' ' + payTag + '</div></div>' +
+        '<div class="flex-between">' +
+        '<div style="font-size:12px;color:var(--text3)">Room ' + b.room_number + ' · ' + fmtDateTime(b.check_in) + (b.id_proof_type ? ' · ID: ' + b.id_proof_type : '') + '</div>' +
+        '<div style="font-size:14px;font-weight:700">' + fmt(b.amount) + '</div></div>' +
+        (pending > 0 ? '<div style="font-size:11px;color:var(--red);margin-top:4px">Due: ' + fmt(pending) + '</div>' : '') +
+        '<div style="font-size:11px;color:var(--primary);margin-top:6px;font-weight:600">Tap to view ID proof &rarr;</div>' +
+        '</div>';
+    });
+    document.getElementById('customerSearchResults').innerHTML = html;
+  } catch(e) { document.getElementById('customerSearchResults').innerHTML = '<div style="text-align:center;color:var(--red);padding:24px">' + e.message + '</div>'; }
+}
+
+async function viewCustomerDetail(bookingId, guestName) {
+  document.getElementById('idProofViewerTitle').textContent = guestName + ' — ID Proof';
+  document.getElementById('idProofViewerContent').innerHTML = '<div style="padding:24px;color:var(--text3)">Loading...</div>';
+  openModal('idProofViewerModal');
+  try {
+    var d = await api('GET', '/api/booking/' + bookingId + '/idproof');
+    var html = '<div style="margin-bottom:10px">' +
+      '<span class="mode-badge mode-upi" style="font-size:13px">' + (d.id_proof_type || 'ID') + '</span>' +
+    '</div>';
+    if (d.id_proof && d.id_proof.startsWith('data:image')) {
+      html += '<img src="' + d.id_proof + '" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)">';
+    } else if (d.id_proof) {
+      html += '<div style="color:var(--text2);font-size:13px;padding:20px">ID stored but cannot preview this format.</div>';
+    } else {
+      html += '<div style="color:var(--text3);font-size:13px;padding:20px">No ID proof on file.</div>';
+    }
+    document.getElementById('idProofViewerContent').innerHTML = html;
+  } catch(e) {
+    document.getElementById('idProofViewerContent').innerHTML = '<div style="color:var(--red);padding:24px;text-align:center">' + e.message + '</div>';
+  }
 }
 
 // ===== OWNER DASHBOARD =====
