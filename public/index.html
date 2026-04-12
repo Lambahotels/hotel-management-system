@@ -467,7 +467,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 <script>
 // ===== APP STATE =====
-let STATE = {
+var STATE = {
   user: null,
   hotel: null,
   currentScreen: 'rooms',
@@ -476,37 +476,38 @@ let STATE = {
   currentExpenseCat: null,
   bookingDate: new Date().toISOString().substring(0,10),
   expenseDate: new Date().toISOString().substring(0,10),
-  activeBookingId: null,    // for payment
-  activeCheckoutId: null,   // for checkout
+  activeBookingId: null,
+  activeCheckoutId: null,
   activeRoomId: null,
-  activeHotelId: null,      // for room booking
+  activeHotelId: null,
   ownerSelectedHotel: 'all',
   rooms: [],
 };
 
 // ===== UTILS =====
-function fmt(n) { return '₹' + Number(n||0).toLocaleString('en-IN'); }
+function fmt(n) { return '\u20B9' + Number(n||0).toLocaleString('en-IN'); }
 function fmtDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }); }
 function fmtTime(d) { if (!d) return '-'; return new Date(d).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }); }
-function fmtDateTime(d) { if (!d) return '-'; const dt = new Date(d); return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) + ' ' + dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}); }
+function fmtDateTime(d) { if (!d) return '-'; var dt = new Date(d); return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) + ' ' + dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}); }
 function today() { return new Date().toISOString().substring(0,10); }
-function nowDatetimeLocal() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().substring(0,16); }
+function nowDatetimeLocal() { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().substring(0,16); }
 
-function showToast(msg, type='') {
-  const t = document.getElementById('toast');
+function showToast(msg, type) {
+  type = type || '';
+  var t = document.getElementById('toast');
   t.textContent = msg; t.className = 'show' + (type ? ' ' + type : '');
   clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(() => { t.className = ''; }, 2800);
+  window._toastTimer = setTimeout(function() { t.className = ''; }, 2800);
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 async function api(method, url, body) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(url, opts);
-  const data = await r.json();
+  var r = await fetch(url, opts);
+  var data = await r.json();
   if (!r.ok) throw new Error(data.error || 'Something went wrong');
   return data;
 }
@@ -514,21 +515,21 @@ async function api(method, url, body) {
 // ===== AUTH =====
 async function init() {
   try {
-    const data = await api('GET', '/api/auth/me');
+    var data = await api('GET', '/api/auth/me');
     if (data.user) { STATE.user = data.user; STATE.hotel = data.hotel; showApp(); }
   } catch(e) {}
 }
 
 async function doLogin() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  const err = document.getElementById('loginError');
-  const btn = document.getElementById('loginBtn');
+  var u = document.getElementById('loginUser').value.trim();
+  var p = document.getElementById('loginPass').value;
+  var err = document.getElementById('loginError');
+  var btn = document.getElementById('loginBtn');
   err.classList.remove('show');
   if (!u || !p) { err.textContent = 'Please enter username and password'; err.classList.add('show'); return; }
   btn.disabled = true; btn.textContent = 'Logging in...';
   try {
-    const data = await api('POST', '/api/auth/login', { username: u, password: p });
+    var data = await api('POST', '/api/auth/login', { username: u, password: p });
     STATE.user = data.user; STATE.hotel = data.hotel;
     showApp();
   } catch(e) {
@@ -536,7 +537,7 @@ async function doLogin() {
   } finally { btn.disabled = false; btn.textContent = 'Login'; }
 }
 
-document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginPass').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
 
 function showLogoutConfirm() { openModal('logoutModal'); }
 async function doLogout() {
@@ -550,14 +551,13 @@ async function doLogout() {
 function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'flex';
-
-  const isOwner = STATE.user.role === 'owner';
-  document.getElementById('headerTitle').textContent = isOwner ? 'All Hotels' : (STATE.hotel?.name || 'Hotel');
+  var isOwner = STATE.user.role === 'owner';
+  var hotelName = STATE.hotel ? STATE.hotel.name : 'Hotel';
+  document.getElementById('headerTitle').textContent = isOwner ? 'All Hotels' : hotelName;
   if (!isOwner) {
-    document.getElementById('headerHotel').textContent = STATE.hotel?.name || '';
+    document.getElementById('headerHotel').textContent = hotelName;
     document.getElementById('headerHotel').style.display = '';
   }
-
   buildNav();
   if (isOwner) { switchScreen('owner'); loadOwnerDashboard(); }
   else { switchScreen('rooms'); loadRooms(); }
@@ -565,386 +565,360 @@ function showApp() {
 
 // ===== NAVIGATION =====
 function buildNav() {
-  const nav = document.getElementById('bottomNav');
-  const isOwner = STATE.user.role === 'owner';
-
-  const staffItems = [
-    { id: 'rooms',    icon: '🏠', label: 'Rooms' },
-    { id: 'bookings', icon: '📋', label: 'Bookings' },
-    { id: 'expenses', icon: '💸', label: 'Expenses' },
-    { id: 'report',   icon: '📊', label: 'Report' },
+  var nav = document.getElementById('bottomNav');
+  var isOwner = STATE.user.role === 'owner';
+  var staffItems = [
+    { id: 'rooms',    label: 'Rooms' },
+    { id: 'bookings', label: 'Bookings' },
+    { id: 'expenses', label: 'Expenses' },
+    { id: 'report',   label: 'Report' },
   ];
-  const ownerItems = [
-    { id: 'owner',    icon: '🏨', label: 'Hotels' },
-    { id: 'report',   icon: '📊', label: 'Report' },
-    { id: 'cameras',  icon: '🍘', label: 'CCTV' },
-    { id: 'audit',    icon: '🔑', label: 'Audit' },
+  var ownerItems = [
+    { id: 'owner',    label: 'Hotels' },
+    { id: 'report',   label: 'Report' },
+    { id: 'cameras',  label: 'Cameras' },
   ];
-
-  const items = isOwner ? ownerItems : staffItems;
-  nav.innerHTML = items.map(it => `
-    <div class="nav-item${STATE.currentScreen === it.id ? ' active' : ''}" onclick="navTo('${it.id}')">
-      <span>${it.icon}</span>
-      <span>${it.label}</span>
-    </div>`).join('');
-}
-
-function navTo(screen) {
-  switchScreen(screen);
-  switch(screen) {
-    case 'rooms': loadRooms(); break;
-    case 'bookings': loadBookings(); break;
-    case 'expenses': loadExpenses(); break;
-    case 'report': loadReport(); break;
-    case 'owner': loadOwnerDashboard(); break;
-    case 'cameras': showCameras(); break;
-    case 'audit': loadAudit(); break;
+  var items = isOwner ? ownerItems : staffItems;
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var activeClass = STATE.currentScreen === item.id ? ' active' : '';
+    html += '<button class="nav-item' + activeClass + '" onclick="switchScreen(\'' + item.id + '\')">' +
+      '<span class="nav-icon">' + item.label.substring(0,1) + '</span>' +
+      '<span class="nav-label">' + item.label + '</span></button>';
   }
+  nav.innerHTML = html;
 }
 
-function switchScreen(s) {
-  STATE.currentScreen = s;
-  document.querySelectorAll('.screen').forEach(el => el.style.display = 'none');
-  const target = document.getElementById('screen-' + s);
-  if (target) target.style.display = '';
+function switchScreen(name) {
+  STATE.currentScreen = name;
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  var el = document.getElementById('screen' + name.charAt(0).toUpperCase() + name.slice(1));
+  if (el) el.classList.add('active');
   buildNav();
+  document.getElementById('mainContent').scrollTop = 0;
+  if (name === 'rooms') loadRooms();
+  else if (name === 'bookings') loadBookings();
+  else if (name === 'expenses') loadExpenses();
+  else if (name === 'report') loadReport();
+  else if (name === 'owner') loadOwnerDashboard();
+  else if (name === 'cameras') loadCameras();
 }
 
-// ===== ROOMS =====
+// ===== ROOMS SCREEN =====
 async function loadRooms() {
-  const grid = document.getElementById('roomGrid');
-  grid.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
+  var hotelId = STATE.hotel ? STATE.hotel.id : null;
+  if (!hotelId) return;
   try {
-    const data = await api('GET', `/api/rooms/${STATE.hotel.id}`);
-    STATE.rooms = data.rooms;
-    renderRooms(data.rooms);
-  } catch(e) { grid.innerHTML = '<p>Error loading rooms</p>'; }
+    STATE.rooms = await api('GET', '/api/rooms/' + hotelId);
+    renderRooms();
+  } catch(e) { showToast('Failed to load rooms', 'error'); }
 }
 
-function renderRooms(rooms) {
-  const grid = document.getElementById('roomGrid');
-  if (!rooms.length) { grid.innerHTML = '<p style="text-align:center">No rooms found</p>'; return; }
-
-  const now = Date.now();
-  grid.innerHTML = rooms.map(room => {
-    let statusClass = 'vacant', extraClass = '', info = '', bookingId = null;
-    if (room.currentBooking) {
-      const b = room.currentBooking;
-      bookingId = b.id;
-      statusClass = 'occupied';
-      const isHourly = b.booking_type === 'hourly';
-      if (isHourly && b.expected_checkout) {
-        const exp = new Date(b.expected_checkout).getTime();
-        if (now > exp) extraClass = ' overdue';
+function renderRooms() {
+  var rooms = STATE.rooms;
+  if (!rooms.length) {
+    document.getElementById('roomsContent').innerHTML = '<div class="empty-state"><div class="empty-icon">&#127968;</div><div class="empty-text">No rooms found</div></div>';
+    return;
+  }
+  var vacant   = rooms.filter(function(r) { return r.status === 'vacant'; }).length;
+  var occupied = rooms.filter(function(r) { return r.status === 'occupied' || r.status === 'overdue'; }).length;
+  var floors = {};
+  rooms.forEach(function(r) {
+    if (!floors[r.floor]) floors[r.floor] = [];
+    floors[r.floor].push(r);
+  });
+  var floorNums = Object.keys(floors).map(Number).sort(function(a,b) { return b-a; });
+  var html = '<div class="stats-row">' +
+    '<div class="stat-card green"><div class="stat-value">' + vacant + '</div><div class="stat-label">Empty Rooms</div></div>' +
+    '<div class="stat-card red"><div class="stat-value">' + occupied + '</div><div class="stat-label">Occupied</div></div>' +
+    '</div>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
+    '<div class="section-title" style="margin:0">Room Status</div>' +
+    '<button class="btn-sm blue" onclick="loadRooms()">Refresh</button></div>' +
+    '<div class="card" style="padding:12px">';
+  floorNums.forEach(function(f) {
+    html += '<div class="floor-section"><div class="floor-label">Floor ' + f + '</div><div class="rooms-row">';
+    floors[f].forEach(function(room) {
+      var st = room.status;
+      var guestShort = '';
+      if (room.booking && room.booking.guest_name) {
+        guestShort = room.booking.guest_name.split(' ')[0];
       }
-      info = b</span>${b.guest_name}${isHourly ? '<br><small>' + fmtTime(b.check_in_time) + '–' + (b.expected_checkout ? fmtTime(b.expected_checkout) : '?') + '</small>' : '<br><small>' + b.num_nights + ' nights</small>'}`;
-    }
-    const onclick = room.currentBooking
-      ? `openCheckout(${bookingId}, '${room.number}')`
-      : `openBookingModal(${room.id}, '${room.number}', ${STATE.hotel.id})`;
-
-    return `<div class="room-card ${statusClass}${extraClass}" onclick="${onclick}">
-      <div class="room-number">${room.number}</div>
-      <div class="room-type">${room.type}</div>
-      ${info ? `<div class="room-guest">${info}</div>` : ''}
-    </div>`;
-  }).join('');
+      var timeInfo = '';
+      if (room.booking) {
+        timeInfo = room.booking.booking_type === 'hourly' ? fmtTime(room.booking.check_in) : fmtDate(room.booking.check_in);
+      }
+      var statusLabel = st === 'vacant' ? 'Empty' : (st === 'overdue' ? 'Overdue' : 'Occupied');
+      var overdueBadge = st === 'overdue' ? '<span class="overdue-badge">LATE</span>' : '';
+      var guestSpan = guestShort ? '<span class="room-guest">' + guestShort + '</span>' : '';
+      var timeSpan = timeInfo ? '<span class="room-time">' + timeInfo + '</span>' : '';
+      html += '<button class="room-tile ' + st + '" onclick="openRoomAction(' + room.id + ')">' +
+        overdueBadge +
+        '<span class="room-number">' + room.room_number + '</span>' +
+        '<span class="room-status-label">' + statusLabel + '</span>' +
+        guestSpan + timeSpan + '</button>';
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  document.getElementById('roomsContent').innerHTML = html;
 }
 
-// ===== BOOKING MODAL - open from room card =====
-function openBookingModal(roomId, roomNum, hotelId) {
+// ===== ROOM ACTION MODAL =====
+function openRoomAction(roomId) {
+  var room = STATE.rooms.find(function(r) { return r.id === roomId; });
+  if (!room) return;
+  var el = document.getElementById('roomModalInner');
+  var html = '';
+  if (room.status === 'vacant') {
+    html = '<div class="modal-header"><h2>Room ' + room.room_number + '</h2>' +
+      '<button class="modal-close" onclick="closeModal(\'roomModal\')">&#x2715;</button></div>' +
+      '<div style="text-align:center;margin-bottom:20px">' +
+      '<span style="font-size:40px">&#128994;</span>' +
+      '<div style="font-size:16px;font-weight:700;margin-top:8px;color:var(--green)">Room is Empty</div>' +
+      '<div style="font-size:13px;color:var(--text2);margin-top:4px">Floor ' + room.floor + '</div></div>' +
+      '<button class="btn-primary" onclick="closeModal(\'roomModal\');openBookingForm(' + roomId + ')">Book This Room</button>';
+  } else {
+    var b = room.booking;
+    var pending = b.amount - b.payment_received;
+    var isPaid = pending <= 0;
+    var isOverdue = room.status === 'overdue';
+    var payClass = isPaid ? 'paid' : (pending === b.amount ? 'unpaid' : 'partial');
+    var phoneRow = b.guest_phone ? '<div class="booking-info-row"><span class="lbl">Phone</span><span class="val">' + b.guest_phone + '</span></div>' : '';
+    var typeLabel = b.booking_type === 'hourly' ? 'Hourly' : 'Nightly';
+    var overdueClass = isOverdue ? 'text-red fw700' : '';
+    var checkoutRow = b.expected_checkout ? '<div class="booking-info-row"><span class="lbl">Expected Out</span><span class="val ' + overdueClass + '">' + fmtDateTime(b.expected_checkout) + '</span></div>' : '';
+    var durationRow = b.duration_label ? '<div class="booking-info-row"><span class="lbl">Duration</span><span class="val">' + b.duration_label + '</span></div>' : '';
+    var paidClass = isPaid ? 'text-green' : 'text-orange';
+    var pendingClass = pending > 0 ? 'text-red' : 'text-green';
+    var payBtn = !isPaid ? '<button class="btn-sm green" style="flex:1" onclick="closeModal(\'roomModal\');openPaymentModal(' + b.id + ')">Add Payment</button>' : '';
+    html = '<div class="modal-header"><h2>Room ' + room.room_number + '</h2>' +
+      '<button class="modal-close" onclick="closeModal(\'roomModal\')">&#x2715;</button></div>' +
+      '<div class="booking-info-box">' +
+      '<div class="booking-info-row"><span class="lbl">Guest</span><span class="val">' + b.guest_name + '</span></div>' +
+      phoneRow +
+      '<div class="booking-info-row"><span class="lbl">Type</span><span class="val">' + typeLabel + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Check In</span><span class="val">' + fmtDateTime(b.check_in) + '</span></div>' +
+      checkoutRow + durationRow + '</div>' +
+      '<div class="amount-big ' + payClass + '"><span class="currency">&#x20B9;</span>' + Number(b.amount).toLocaleString('en-IN') + '</div>' +
+      '<div style="text-align:center;margin-bottom:16px;font-size:13px;color:var(--text2)">' +
+      'Paid: <strong class="' + paidClass + '">' + fmt(b.payment_received) + '</strong> &nbsp;&middot;&nbsp; ' +
+      'Pending: <strong class="' + pendingClass + '">' + fmt(Math.max(0, pending)) + '</strong></div>' +
+      '<div class="row-btns">' + payBtn +
+      '<button class="btn-sm red" style="flex:1" onclick="closeModal(\'roomModal\');openCheckoutModal(' + b.id + ')">Check Out</button></div>';
+  }
+  el.innerHTML = html;
+  openModal('roomModal');
+}
+
+// ===== BOOKING FORM =====
+function openBookingForm(roomId) {
+  var room = STATE.rooms.find(function(r) { return r.id === roomId; });
   STATE.activeRoomId = roomId;
-  STATE.activeHotelId = hotelId;
-  document.getElementById('bookingRoomNum').textContent = 'Room ' + roomNum;
-  // default to hourly
-  setBookingType('hourly');
-  // set default dates
-  document.getElementById('checkInDT').value = nowDatetimeLocal();
-  document.getElementById('expectedCheckout').value = '';
+  STATE.activeHotelId = STATE.hotel ? STATE.hotel.id : null;
+  document.getElementById('bookingModalTitle').textContent = 'Book Room ' + (room ? room.room_number : '');
   document.getElementById('guestName').value = '';
   document.getElementById('guestPhone').value = '';
-  document.getElementById('guestId').value = '';
-  document.getElementById('lastName').value = '';
+  document.getElementById('bookingAmount').value = '';
+  document.getElementById('bookingNotes').value = '';
+  document.getElementById('durationLabel').value = '';
+  document.getElementById('checkInTime').value = nowDatetimeLocal();
+  document.getElementById('expectedCheckout').value = '';
+  document.getElementById('checkInDate').value = today();
   document.getElementById('numNights').value = '1';
-  document.getElementById('agreedAmount').value = '';
+  setBookingType('hourly');
   openModal('bookingModal');
 }
 
 function setBookingType(type) {
   STATE.currentBookingType = type;
-  document.querySelectorAll('.type-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.type === type));
+  document.getElementById('typeHourly').classList.toggle('active', type === 'hourly');
+  document.getElementById('typeNightly').classList.toggle('active', type === 'nightly');
   document.getElementById('hourlyFields').style.display = type === 'hourly' ? '' : 'none';
   document.getElementById('nightlyFields').style.display = type === 'nightly' ? '' : 'none';
 }
 
-function setPayMode(mode) {
-  STATE.currentPayMode = mode;
-  document.querySelectorAll('.pay-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
-}
-
 async function submitBooking() {
-  const guestName = document.getElementById('guestName').value.trim();
-  if (!guestName) { showToast('Guest name is required', 'error'); return; }
-  const amt = parseFloat(document.getElementById('agreedAmount').value);
-  if (!amt || amt <= 0) { showToast('Amount is required', 'error'); return; }
-
-  const type = STATE.currentBookingType;
-  const paymode = STATE_currentPayMode;
-  const body = {
-    room_id: STATE.activeRoomId,
-    hotel_id: STATE.activeHotelId,
-    guest_name: guestName,
-    guest_phone: document.getElementById('guestPhone').value.trim() || null,
-    guest_id: document.getElementById('guestId').value.trim() || null,
-    last_name: document.getElementById('lastName').value.trim() || null,
-    booking_type: type,
-    agreed_amount: amt,
-    payment_mode: paymode,
-  };
+  var guestName = document.getElementById('guestName').value.trim();
+  var amount    = document.getElementById('bookingAmount').value;
+  if (!guestName) { showToast('Please enter guest name', 'error'); return; }
+  if (!amount || parseFloat(amount) < 0) { showToast('Please enter amount', 'error'); return; }
+  var type = STATE.currentBookingType;
+  var body;
   if (type === 'hourly') {
-    body.check_in_time = document.getElementById('checkInDT').value;
-    body.expected_checkout = document.getElementById('expectedCheckout').value || null;
+    var checkIn = document.getElementById('checkInTime').value;
+    if (!checkIn) { showToast('Please enter check-in time', 'error'); return; }
+    body = { room_id: STATE.activeRoomId, hotel_id: STATE.activeHotelId,
+      guest_name: guestName, guest_phone: document.getElementById('guestPhone').value,
+      booking_type: 'hourly', check_in: checkIn,
+      expected_checkout: document.getElementById('expectedCheckout').value || null,
+      duration_label: document.getElementById('durationLabel').value || null,
+      amount: amount, notes: document.getElementById('bookingNotes').value };
   } else {
-    body.num_nights = int(document.getElementById('numNights').value);
-    body.booking_date = document.getElementById('bookingDate').value;
+    var nights = parseInt(document.getElementById('numNights').value);
+    var ciDate = document.getElementById('checkInDate').value;
+    var coDate = new Date(ciDate);
+    coDate.setDate(coDate.getDate() + nights);
+    var durLabel = nights + ' Night' + (nights > 1 ? 's' : '');
+    body = { room_id: STATE.activeRoomId, hotel_id: STATE.activeHotelId,
+      guest_name: guestName, guest_phone: document.getElementById('guestPhone').value,
+      booking_type: 'nightly', check_in: ciDate + ' 12:00:00',
+      expected_checkout: coDate.toISOString().substring(0,10) + ' 11:00:00',
+      duration_label: durLabel, amount: amount, notes: document.getElementById('bookingNotes').value };
   }
   try {
     await api('POST', '/api/bookings', body);
     closeModal('bookingModal');
-    showToast('Booking confirmed!', 'success');
+    showToast('Room booked!', 'success');
     loadRooms();
   } catch(e) { showToast(e.message, 'error'); }
 }
 
-// ===== CHECKOUT =====
-function openCheckout(bookingId, roomNum) {
+// ===== PAYMENT MODAL =====
+function openPaymentModal(bookingId) {
+  STATE.activeBookingId = bookingId;
+  document.getElementById('paymentAmount').value = '';
+  document.getElementById('paymentNotes').value = '';
+  STATE.currentPayMode = 'Cash';
+  document.querySelectorAll('.pay-mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.pay-mode-btn')[0].classList.add('active');
+  var room = STATE.rooms.find(function(r) { return r.booking && r.booking.id === bookingId; });
+  if (room) {
+    var b = room.booking;
+    var pending = b.amount - b.payment_received;
+    document.getElementById('paymentBookingInfo').innerHTML =
+      '<div class="booking-info-row"><span class="lbl">Guest</span><span class="val">' + b.guest_name + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Room</span><span class="val">' + room.room_number + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Total Amount</span><span class="val fw700">' + fmt(b.amount) + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Already Paid</span><span class="val text-green">' + fmt(b.payment_received) + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Remaining</span><span class="val text-red fw700">' + fmt(Math.max(0, pending)) + '</span></div>';
+    if (pending > 0) document.getElementById('paymentAmount').value = pending;
+  }
+  openModal('paymentModal');
+}
+
+function setPayMode(btn, mode) {
+  STATE.currentPayMode = mode;
+  document.querySelectorAll('.pay-mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+
+async function submitPayment() {
+  var amount = document.getElementById('paymentAmount').value;
+  if (!amount || parseFloat(amount) <= 0) { showToast('Please enter amount', 'error'); return; }
+  try {
+    await api('POST', '/api/payments', { booking_id: STATE.activeBookingId, amount: parseFloat(amount),
+      payment_mode: STATE.currentPayMode, notes: document.getElementById('paymentNotes').value });
+    closeModal('paymentModal');
+    showToast('Payment saved!', 'success');
+    loadRooms();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== CHECKOUT MODAL =====
+function openCheckoutModal(bookingId) {
   STATE.activeCheckoutId = bookingId;
-  const b = STATE-rUms.find(r => r.currentBooking?.id === bookingId)?.currentBooking;
-  if (!b) return;
-  const paid = Number(b.paid_amount||0);
-  const agreed = Number(b.agreed_amount||0);
-  const due = agreed - paid;
-  document.getElementById('checkoutInfo').innerHTML = `
-    <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--text2)">Guest</span><span>${b.guest_name}</span></div>
-      <div style="display:flex;justify-content:space-between;><span style="color:var(--text2)">Room</span><span>${roomNum}</span></div>
-    </div>
-    <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--text2)">Agreed</span><span>${fmt(agreed)}</span></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--text2)">Paid</span><span>${fmt(paid)}</span></div>
-      <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Balance Due</span><span style="color:${due > 0 ? 'var(--error(' : 'var(--success)'};font-weight:700">${fmt(due)}</span></div>
-    </div>
-    ${due > 0 ? `
-    <div class="form-group">
-      <label>Collect Payment Now (₹)</label>
-      <input type="number" class="form-input" id="checkoutPayment" value="${due}" min="0" inputmode="numeric">
-    </div>
-    <div class="pay-select">
-      <button class="pay-btn active" data-mode="Cash" onclick="setPayMode('Cash')">Cash</button>
-      <button class="pay-btn" data-mode="UPI" onclick="setPayMode('UPI')">UPI</button>
-      <button class="pay-btn" data-mode="Card" onclick="setPayMode('Card')">Card</button>
-    </div>` : ''}
-  `;
+  var room = STATE.rooms.find(function(r) { return r.booking && r.booking.id === bookingId; });
+  if (room) {
+    var b = room.booking;
+    var pending = b.amount - b.payment_received;
+    var paidClass = pending > 0 ? 'text-orange' : 'text-green';
+    var pendingBanner = pending > 0 ?
+      '<div style="margin-top:8px;padding:8px;background:var(--orange-light);border-radius:8px;font-size:13px;font-weight:600;color:var(--orange)">Pending payment: ' + fmt(pending) + '</div>' : '';
+    document.getElementById('checkoutInfo').innerHTML =
+      '<div class="booking-info-box" style="margin-bottom:0">' +
+      '<div class="booking-info-row"><span class="lbl">Guest</span><span class="val">' + b.guest_name + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Room</span><span class="val">' + room.room_number + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Checked In</span><span class="val">' + fmtDateTime(b.check_in) + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Total Amount</span><span class="val fw700">' + fmt(b.amount) + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Amount Paid</span><span class="val ' + paidClass + '">' + fmt(b.payment_received) + '</span></div>' +
+      pendingBanner + '</div>';
+  }
   openModal('checkoutModal');
 }
 
 async function confirmCheckout() {
-  const payInput = document.getElementById('checkoutPayment');
-  let payAmt = payInput ? parseFloat(payInput.value) : 0;
-  if (isNaN(payAmt)) payAmt = 0;
   try {
-    if (payAmt > 0) {
-      await api('POST', '/api/payments', { booking_id: STATE.activeCheckoutId, amount: payAmt, mode: STATE.currentPayMode });
-    }
-    await api('PUT', `/api/bookings/${STATE.activeCheckoutId}/checkout`, {});
+    await api('PUT', '/api/bookings/' + STATE.activeCheckoutId + '/checkout');
     closeModal('checkoutModal');
-    showToast('Checked out successfully!', 'success');
+    showToast('Guest checked out!', 'success');
     loadRooms();
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-// ===== BOOKINGS LIST=====
-async function loadBookings() {
-  const res = document.getElementById('bookingsList');
-  res.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
-  try {
-    const data = await api('GET', `/api/rooms/${STATE/hotel.id}?include_bookings=1`);
-    const bookings = data.rooms.flatMap(r => r.currentBooking ? [{...r.currentBooking, roomNum: r.number}] : []);
-    if (!bookings.length) { res.innerHTML = '<p style="text-align:center;color:var(--text2)">No active bookings</p>'; return; }
-    res.innerHTML = bookings.map(b => {
-      const paid = Number(b.paid_amount||0);
-      const agreed = Number(b.agreed_amount||0);
-      const due = agreed - paid;
-      return `<div class="booking-card" onclick="openPaymentModal(${b.id})">
-        <div style="display:flex;justify-content:space-between;align-items:start">
-          <div><strong>${b.guest_name}</strong><br><small style="color:var(--text2)">Room ${b.roomNum} &#8212; ${b.booking_type}</small></div>
-          <div style="text-align:right">${fmt(agreed)}<br><small style="color:${due > 0 ? 'var(--error(' : 'var(--success)'}">${due > 0 ? 'Due: ' + fmt(due) : 'Paid'}</small></div>
-        </div>
-      </div>`;
-    }).join('');
-  } catch (e) { res.innerHTML = '<p>Error loading bookings</p>'; }
-}
-
-function openPaymentModal(bookingId) {
-  STATE.activeBookingId = bookingId;
-  document.getElementById('payAmount').value = '';
-  openModal('paymentModal');
-}
-
-anync function submitPayment() {
-  const amt = parseFloat(document.getElementById('payAmount').value);
-  if (!amt || amt <= 0) { showToast('Enter valid amount', 'error'); return; }
-  try {
-    await api('POST', '/api/payments', { booking_id: STATE-ctiveBookingId, amount: amt, mode: STATE.currentPayMode });
-    closeModal('paymentModal');
-    showToast('Payment recorded!', 'success');
-    loadBookings();
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-// ===== EXPEMSEQ�|=====
-async function loadExpenses() {
-  const res = document.getElementById('expensesList');
-  const sumEl = document.getElementById('expensesSum');
-  res.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
-  try {
-    const data = await api('GET', `/api/dashboard/${STATE_hotel.id}`);
-    const expenses = data.recentExpenses || [];
-    sumEl.textContent = fmt(data.totalExpenses);
-    if (!expenses.length) { res.innerHTML = '<p style="text-align:center;color:var(--text2)">No expenses today</p>'; return; }
-    res.innerHTML = expenses.map(e => `<div class="booking-card">
-      <div style="display:flex;justify-content:space-between">
-        <div><strong>${e.category}</strong>${e.description ? '<br><small style="color:var(--text2)">' + e.description + '</small>' : ''}</div>
-        <div style="text-align:right">${fmt(e.amount)}<br><small style="color:var(--text2)">${fmtDate(e.date)}</small></div>
-      </div>
-    </div>`).join('');
-  } catch(e) { res.innerHTML = '<p>Error</p>'; }
-}
-
-function selectCat(btn, cat) {
-  STATE.currentExpenseCat= Ncat;
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-async function submitExpense() {
-  if (!STATE.currentExpenseCat) { showToast('Select a category', 'error'); return; }
-  const amt = parseFloat(document.getElementById('expenseAmount').value);
-  if (!amt || amt <= 0) { showToast('Enter valid amount', 'error'); return; }
-  try {
-    await api('POST', '/api/expenses', {
-      hotel_id: STATE.hotel.id,
-      category: STATE_currentExpenseCat,
-      description: document.getElementById('expenseDesc').value.trim() || null,
-      amount: amt,
-      date: document.getElementById('expenseDate').value || today(),
-    });
-    closeModal('expenseModal');
-    STATE.currentExpenseCat = null;
-    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-    showToast('Expense saved!', 'success');
-    loadExpenses();
   } catch(e) { showToast(e.message, 'error'); }
 }
 
-// ===== REPORT =====
-async function loadReport() {
-  const res = document.getElementById('reportContent');
-  res.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
-  const hid = STATE-suser.role === 'owner' ? (STATE.ownerSelectedHotel !== 'all' ? STATE,ownerSelectedHotel : null) : STATE.hotel.id;
-  if (!hid) { res.innerHTML = '<p style="text-align:center">Select a hotel from the Dashboard to view report.</p>'; return; }
-  const date = document.getElementById('reportDate')?.value || today();
-  try {
-    const data = await api('GET', `/api/reports/${hid}?date=${date}`);
-    res.innerHTML = `<div class="stats-grid">
-      <div class="stat-card"><span class="stat-value">${fmt(data.totalRevenue)}</span><span class="stat-label">Revenue</span></div>
-      <div class="stat-card"><span class="stat-value">${fmt(data.totalExpenses)}</span><span class="stat-label">Expenses</span></div>
-      <div class="stat-card"><span class="stat-value">${fmt(data.netProfit)}</span><span class="stat-label">Net Profit</span></div>
-      <div class="stat-card"><span class="stat-value">${data.totalBookings}</span><span class="stat-label">Bookings</span></div>
-    </div>
-    ${data.dailyBookings?.length ? `
-    <h2 style="margin-top:16px;font-size:14px;color:var(--text2)">Today's Bookings</h2>
-    ${data.dailyBookings.map(b => `<div class="booking-card">
-      <div style="display:flex;justify-content:space-between">
-        <div><strong>${b.guest_name}</strong><br><small style="color:var(--text2)">Room ${b.room_number} &#8212; ${b.booking_type}</small></div>
-        <div style="text-align:right">${fmt(b.agreed_amount)}<br><small style="color:var(--text2)">${b.status}</small></div>
-      </div>
-    </div>`).join('')}` : ''}
-    ` ;
-  } catch(e) { res.innerHTML = '<p>Error loading report</p>'; }
+// ===== EXPENSE MODAL =====
+function openExpenseModal() {
+  STATE.currentExpenseCat = null;
+  document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('expenseDesc').value = '';
+  document.getElementById('expenseAmount').value = '';
+  document.getElementById('expenseDate').value = today();
+  openModal('expenseModal');
 }
-
-// ===== OWNER DASHBOARD =====
-async function loadOwnerDashboard() {
-  const res = document.getElementById('ownerContent');
-  res.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading...</div>';
+function selectCat(btn, cat) {
+  STATE.currentExpenseCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+async function submitExpense() {
+  if (!STATE.currentExpenseCat) { showToast('Please select a category', 'error'); return; }
+  var amount = document.getElementById('expenseAmount').value;
+  if (!amount || parseFloat(amount) <= 0) { showToast('Please enter amount', 'error'); return; }
   try {
-    const data = await api('GET', '/api/owner/dashboard');
-    let html = ``;
-    data.hotels.forEach(h => {
-      html += `<div class="booking-card" onclick="selectOwnerHotel(${h.id})">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <strong>${h.name}</strong>
-          <span style="color:var(--success);font-weight:700">${fmt(h.todayRevenue)}</span>
-        </div>
-        <div style="display:flex;gap:12px;font-size:13px;color:var(--text2)">
-          <span>🏠 ${h.occupiedRooms}/${h.totalRooms} occupied</span>
-          <span>💸 ${fmt(h.todayExpenses)}</span>
-        </div>
-      </div>`;
-    });
-    html += `<div class="booking-card" style="background:var(--primary);color:white">
-      <div style="display:flex;justify-content:space-between;al expense_date: document.getElementById('expenseDate').value });
+    await api('POST', '/api/expenses', { hotel_id: STATE.hotel ? STATE.hotel.id : null,
+      category: STATE.currentExpenseCat, description: document.getElementById('expenseDesc').value,
+      amount: parseFloat(amount), expense_date: document.getElementById('expenseDate').value });
     closeModal('expenseModal');
-    showToast('Expense added! 💸', 'success');
+    showToast('Expense added!', 'success');
     loadExpenses();
   } catch(e) { showToast(e.message, 'error'); }
 }
 
 // ===== BOOKINGS SCREEN =====
 function changeBookingDate(delta) {
-  const d = new Date(STATE.bookingDate);
+  var d = new Date(STATE.bookingDate);
   d.setDate(d.getDate() + delta);
   STATE.bookingDate = d.toISOString().substring(0,10);
   loadBookings();
 }
 async function loadBookings() {
-  const hotelId = STATE.hotel?.id;
+  var hotelId = STATE.hotel ? STATE.hotel.id : null;
   if (!hotelId) return;
-  const isToday = STATE.bookingDate === today();
+  var isToday = STATE.bookingDate === today();
   document.getElementById('bookingDateDisplay').textContent = isToday ? 'Today' : fmtDate(STATE.bookingDate + 'T00:00:00');
   try {
-    const bookings = await api('GET', `/api/bookings/${hotelId}?date=${STATE.bookingDate}`);
+    var bookings = await api('GET', '/api/bookings/' + hotelId + '?date=' + STATE.bookingDate);
     if (!bookings.length) {
-      document.getElementById('bookingsList').innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No bookings on this day</div></div>`;
+      document.getElementById('bookingsList').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128203;</div><div class="empty-text">No bookings on this day</div></div>';
       return;
     }
-    let html = `<div class="section-title">📋 ${bookings.length} Booking${bookings.length > 1 ? 's' : ''}</div>`;
-    bookings.forEach(b => {
-      const pending = b.amount - b.payment_received;
-      const payTag = pending <= 0 ? '<span class="tag paid">PAID</span>' : (b.payment_received > 0 ? '<span class="tag partial">PARTIAL</span>' : '<span class="tag unpaid">UNPAID</span>');
-      html += `
-        <div class="card" style="padding:14px;margin-bottom:8px">
-          <div class="flex-between mb8">
-            <div>
-              <div style="font-size:16px;font-weight:700">Room ${b.room_number}</div>
-              <div style="font-size:13px;color:var(--text2)">${b.guest_name} ${b.guest_phone ? '· ' + b.guest_phone : ''}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:18px;font-weight:800">${fmt(b.amount)}</div>
-              <span class="tag ${b.booking_type}">${b.booking_type === 'hourly' ? '⏰ Hours' : '🌙 Nights'}</span>
-            </div>
-          </div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">
-            Check-in: ${fmtDateTime(b.check_in)} ${b.expected_checkout ? '· Out: ' + fmtDateTime(b.expected_checkout) : ''}
-          </div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">
-            Paid: <strong class="${pending <= 0 ? 'text-green' : 'text-orange'}">${fmt(b.payment_received)}</strong>
-            · Pending: <strong class="${pending > 0 ? 'text-red' : 'text-green'}">${fmt(Math.max(0,pending))}</strong>
-            &nbsp; ${payTag} &nbsp; <span class="tag ${b.status}">${b.status === 'active' ? 'ACTIVE' : 'CHECKED OUT'}</span>
-          </div>
-          <div style="font-size:11px;color:var(--text3)">By ${b.staff_name}</div>
-        </div>`;
+    var html = '<div class="section-title">Bookings: ' + bookings.length + '</div>';
+    bookings.forEach(function(b) {
+      var pending = b.amount - b.payment_received;
+      var payTag;
+      if (pending <= 0) { payTag = '<span class="tag paid">PAID</span>'; }
+      else if (b.payment_received > 0) { payTag = '<span class="tag partial">PARTIAL</span>'; }
+      else { payTag = '<span class="tag unpaid">UNPAID</span>'; }
+      var typeTag = b.booking_type === 'hourly' ? '<span class="tag hourly">Hours</span>' : '<span class="tag nightly">Nights</span>';
+      var phone = b.guest_phone ? ' - ' + b.guest_phone : '';
+      var paidClass = pending <= 0 ? 'text-green' : 'text-orange';
+      var pendingClass = pending > 0 ? 'text-red' : 'text-green';
+      var checkoutInfo = b.expected_checkout ? ' - Out: ' + fmtDateTime(b.expected_checkout) : '';
+      var statusLabel = b.status === 'active' ? 'ACTIVE' : 'CHECKED OUT';
+      var statusTag = '<span class="tag ' + b.status + '">' + statusLabel + '</span>';
+      html += '<div class="card" style="padding:14px;margin-bottom:8px">' +
+        '<div class="flex-between mb8">' +
+        '<div><div style="font-size:16px;font-weight:700">Room ' + b.room_number + '</div>' +
+        '<div style="font-size:13px;color:var(--text2)">' + b.guest_name + phone + '</div></div>' +
+        '<div style="text-align:right"><div style="font-size:18px;font-weight:800">' + fmt(b.amount) + '</div>' + typeTag + '</div>' +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--text2);margin-bottom:8px">Check-in: ' + fmtDateTime(b.check_in) + checkoutInfo + '</div>' +
+        '<div style="font-size:12px;color:var(--text2);margin-bottom:8px">' +
+        'Paid: <strong class="' + paidClass + '">' + fmt(b.payment_received) + '</strong>' +
+        ' - Pending: <strong class="' + pendingClass + '">' + fmt(Math.max(0,pending)) + '</strong>' +
+        ' &nbsp;' + payTag + '&nbsp;' + statusTag + '</div>' +
+        '<div style="font-size:11px;color:var(--text3)">By ' + b.staff_name + '</div></div>';
     });
     document.getElementById('bookingsList').innerHTML = html;
   } catch(e) { showToast('Failed to load bookings', 'error'); }
@@ -952,245 +926,226 @@ async function loadBookings() {
 
 // ===== EXPENSES SCREEN =====
 function changeExpenseDate(delta) {
-  const d = new Date(STATE.expenseDate);
+  var d = new Date(STATE.expenseDate);
   d.setDate(d.getDate() + delta);
   STATE.expenseDate = d.toISOString().substring(0,10);
   loadExpenses();
 }
 async function loadExpenses() {
-  const hotelId = STATE.hotel?.id;
+  var hotelId = STATE.hotel ? STATE.hotel.id : null;
   if (!hotelId) return;
-  const isToday = STATE.expenseDate === today();
+  var isToday = STATE.expenseDate === today();
   document.getElementById('expenseDateDisplay').textContent = isToday ? 'Today' : fmtDate(STATE.expenseDate + 'T00:00:00');
   try {
-    const expenses = await api('GET', `/api/expenses/${hotelId}?date=${STATE.expenseDate}`);
-    const total = expenses.reduce((s, e) => s + e.amount, 0);
+    var expenses = await api('GET', '/api/expenses/' + hotelId + '?date=' + STATE.expenseDate);
+    var total = expenses.reduce(function(s, e) { return s + e.amount; }, 0);
     if (!expenses.length) {
-      document.getElementById('expensesList').innerHTML = `<div class="empty-state"><div class="empty-icon">💸</div><div class="empty-text">No expenses on this day</div></div>`;
+      document.getElementById('expensesList').innerHTML = '<div class="empty-state"><div class="empty-icon">&#128184;</div><div class="empty-text">No expenses on this day</div></div>';
       return;
     }
-    let html = `<div class="card" style="padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:600;color:var(--text2)">Total Expenses</span><span style="font-size:20px;font-weight:800;color:var(--red)">${fmt(total)}</span></div>`;
-    expenses.forEach(e => {
-      const catIcons = { Cleaning:'🧹', Repair:'🔧', Electricity:'💡', Water:'💧', Supplies:'🛒', Laundry:'👕', Food:'🍽️', Salary:'👤', Other:'📦' };
-      html += `
-        <div class="list-item" style="padding:12px 0">
-          <div class="list-icon" style="background:var(--red-light)">${catIcons[e.category] || '📦'}</div>
-          <div class="list-body">
-            <div class="list-title">${e.category}</div>
-            <div class="list-sub">${e.description || ''} · ${e.staff_name}</div>
-          </div>
-          <div class="list-right">
-            <div class="list-amount text-red">${fmt(e.amount)}</div>
-            <div class="list-meta">${fmtDate(e.expense_date + 'T00:00:00')}</div>
-          </div>
-        </div>`;
+    var catIcons = { Cleaning:'C', Repair:'R', Electricity:'E', Water:'W', Supplies:'S', Laundry:'L', Food:'F', Salary:'$', Other:'O' };
+    var html = '<div class="card" style="padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">' +
+      '<span style="font-size:14px;font-weight:600;color:var(--text2)">Total Expenses</span>' +
+      '<span style="font-size:20px;font-weight:800;color:var(--red)">' + fmt(total) + '</span></div>';
+    expenses.forEach(function(e) {
+      var desc = e.description || '';
+      html += '<div class="list-item" style="padding:12px 0">' +
+        '<div class="list-icon" style="background:var(--red-light);font-size:14px;font-weight:700">' + (catIcons[e.category] || 'O') + '</div>' +
+        '<div class="list-body"><div class="list-title">' + e.category + '</div>' +
+        '<div class="list-sub">' + (desc ? desc + ' - ' : '') + e.staff_name + '</div></div>' +
+        '<div class="list-right"><div class="list-amount text-red">' + fmt(e.amount) + '</div>' +
+        '<div class="list-meta">' + fmtDate(e.expense_date + 'T00:00:00') + '</div></div></div>';
     });
-    document.getElementById('expensesList').innerHTML = `<div class="card">${html}</div>`;
+    document.getElementById('expensesList').innerHTML = '<div class="card">' + html + '</div>';
   } catch(e) { showToast('Failed to load expenses', 'error'); }
 }
 
 // ===== REPORT SCREEN =====
-let reportFrom = today(), reportTo = today(), reportHotelId = null;
+var reportFrom = today(), reportTo = today(), reportHotelId = null;
 async function loadReport() {
-  reportHotelId = STATE.user.role === 'owner' ? STATE,ownerSelectedHotel : STATE.hotel?.id;
+  reportHotelId = STATE.user.role === 'owner' ? STATE.ownerSelectedHotel : (STATE.hotel ? STATE.hotel.id : null);
   renderReportUI();
 }
 function renderReportUI() {
-  const isOwner = STATE.user.role === 'owner';
-  let html = `<div class="section-title">📊 Report</div>`;
+  var isOwner = STATE.user.role === 'owner';
+  var html = '<div class="section-title">Report</div>';
   if (isOwner) {
-    html += `<div class="hotel-tabs" id="reportHotelTabs">
-      ${[{id:'all',name:'All Hotels'},{id:1,name:'Vardan'},{id:2,name:'OY'},{id:3,name:'RR'}].map(h =>
-        `<button class="hotel-tab ${String(reportHotelId) === String(h.id) ? 'active' : ''}" onclick="reportHotelId='${h.id}';loadReportData()">${h.name}</button>`).join('')}
-    </div>`;
+    var tabs = [{id:'all',name:'All Hotels'},{id:1,name:'Vardan'},{id:2,name:'OY'},{id:3,name:'RR'}];
+    html += '<div class="hotel-tabs" id="reportHotelTabs">';
+    tabs.forEach(function(h) {
+      var activeClass = String(reportHotelId) === String(h.id) ? ' active' : '';
+      html += '<button class="hotel-tab' + activeClass + '" onclick="reportHotelId=\'' + h.id + '\';loadReportData()">' + h.name + '</button>';
+    });
+    html += '</div>';
   }
-  html += `
-    <div class="card mb12">
-      <div class="flex-between mb8"><span class="fw700 fs14">Date Range</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div><label class="fs12" style="color:var(--text2);font-weight:600">From</label><input type="date" class="form-input" id="reportFrom" value="${reportFrom}" style="margin-top:4px;padding:8px;font-size:13px"></div>
-        <div><label class="fs12" style="color:var(--text2);font-weight:600">To</label><input type="date" class="form-input" id="reportTo" value="${reportTo}" style="margin-top:4px;padding:8px;font-size:13px"></div>
-      </div>
-      <button class="btn-sm blue" onclick="reportFrom=document.getElementById('reportFrom').value;reportTo=document.getElementById('reportTo').value;loadReportData()">Show Report</button>
-    </div>
-    <div id="reportResults"></div>`;
+  html += '<div class="card mb12"><div class="flex-between mb8"><span class="fw700 fs14">Date Range</span></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">' +
+    '<div><label class="fs12" style="color:var(--text2);font-weight:600">From</label>' +
+    '<input type="date" class="form-input" id="reportFrom" value="' + reportFrom + '" style="margin-top:4px;padding:8px;font-size:13px"></div>' +
+    '<div><label class="fs12" style="color:var(--text2);font-weight:600">To</label>' +
+    '<input type="date" class="form-input" id="reportTo" value="' + reportTo + '" style="margin-top:4px;padding:8px;font-size:13px"></div>' +
+    '</div><button class="btn-sm blue" onclick="reportFrom=document.getElementById(\'reportFrom\').value;reportTo=document.getElementById(\'reportTo\').value;loadReportData()">Show Report</button></div>' +
+    '<div id="reportResults"></div>';
   document.getElementById('reportContent').innerHTML = html;
   loadReportData();
 }
 async function loadReportData() {
-  const hId = reportHotelId === 'all' ? null : reportHotelId;
+  var hId = reportHotelId === 'all' ? null : reportHotelId;
   if (!hId && STATE.user.role !== 'owner') return;
   if (!hId && STATE.user.role === 'owner') {
-    // Load all hotels
-    const hotels = [1,2,3];
+    var hotels = [1,2,3];
     try {
-      const results = await Promise.all(hotels.map(h => api('GET', `/api/reports/${h}?from=${reportFrom}&to=${reportTo}`)));
-      const combined = { bookings: [], expenses: [], summary: { totalBookings:0, totalRevenue:0, totalExpenses:0, netProfit:0 } };
-      results.forEach(r => { combined.bookings.push(...r.bookings); combined.expenses.push(...r.expenses); combined.summary.totalBookings += r.summary.totalBookings; combined.summary.totalRevenue += r.summary.totalRevenue; combined.summary.totalExpenses += r.summary.totalExpenses; combined.summary.netProfit += r.summary.netProfit; });
+      var results = await Promise.all(hotels.map(function(h) { return api('GET', '/api/reports/' + h + '?from=' + reportFrom + '&to=' + reportTo); }));
+      var combined = { bookings: [], expenses: [], summary: { totalBookings:0, totalRevenue:0, totalExpenses:0, netProfit:0 } };
+      results.forEach(function(r) {
+        combined.bookings = combined.bookings.concat(r.bookings);
+        combined.expenses = combined.expenses.concat(r.expenses);
+        combined.summary.totalBookings += r.summary.totalBookings;
+        combined.summary.totalRevenue += r.summary.totalRevenue;
+        combined.summary.totalExpenses += r.summary.totalExpenses;
+        combined.summary.netProfit += r.summary.netProfit;
+      });
       renderReportData(combined);
     } catch(e) { showToast('Failed to load report', 'error'); }
     return;
   }
   try {
-    const data = await api('GET', `/api/reports/${hId}?from=${reportFrom}&to=${reportTo}`);
+    var data = await api('GET', '/api/reports/' + hId + '?from=' + reportFrom + '&to=' + reportTo);
     renderReportData(data);
   } catch(e) { showToast('Failed to load report', 'error'); }
 }
 function renderReportData(data) {
-  const s = data.summary;
-  let html = `
-    <div class="stats-row" style="grid-template-columns:repeat(2,1fr)">
-      <div class="stat-card green"><div class="stat-value">${fmt(s.totalRevenue)}</div><div class="stat-label">💰 Revenue</div></div>
-      <div class="stat-card red"><div class="stat-value">${fmt(s.totalExpenses)}</div><div class="stat-label">💸 Expenses</div></div>
-      <div class="stat-card blue"><div class="stat-value">${fmt(s.netProfit)}</div><div class="stat-label">📈 Net Profit</div></div>
-      <div class="stat-card orange"><div class="stat-value">${s.totalBookings}</div><div class="stat-label">📋 Bookings</div></div>
-    </div>`;
-
+  var s = data.summary;
+  var html = '<div class="stats-row" style="grid-template-columns:repeat(2,1fr)">' +
+    '<div class="stat-card green"><div class="stat-value">' + fmt(s.totalRevenue) + '</div><div class="stat-label">Revenue</div></div>' +
+    '<div class="stat-card red"><div class="stat-value">' + fmt(s.totalExpenses) + '</div><div class="stat-label">Expenses</div></div>' +
+    '<div class="stat-card blue"><div class="stat-value">' + fmt(s.netProfit) + '</div><div class="stat-label">Net Profit</div></div>' +
+    '<div class="stat-card orange"><div class="stat-value">' + s.totalBookings + '</div><div class="stat-label">Bookings</div></div>' +
+    '</div>';
   if (data.bookings.length) {
-    html += `<div class="card"><div class="section-title">📋 Bookings</div>`;
-    data.bookings.forEach(b => {
-      const pending = b.amount - b.payment_received;
-      html += `
-        <div class="report-row">
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:700">Room ${b.room_number} · ${b.guest_name}</div>
-            <div style="font-size:11px;color:var(--text2);margin-top:3px">${fmtDateTime(b.check_in)} · <span class="tag ${b.booking_type}">${b.booking_type}</span> <span class="tag ${b.status}">${b.status}</span></div>
-            ${b.staff_name ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">By ${b.staff_name}</div>` : ''}
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:15px;font-weight:800">${fmt(b.amount)}</div>
-            ${pending > 0 ? `<div style="font-size:11px;color:var(--red)">Pending: ${fmt(pending)}</div>` : '<div style="font-size:11px;color:var(--green)">✓ Paid</div>'}
-          </div>
-        </div>`;
+    html += '<div class="card"><div class="section-title">Bookings</div>';
+    data.bookings.forEach(function(b) {
+      var pending = b.amount - b.payment_received;
+      var pendingHtml = pending > 0 ? '<div style="font-size:11px;color:var(--red)">Pending: ' + fmt(pending) + '</div>' : '<div style="font-size:11px;color:var(--green)">Paid</div>';
+      var staffDiv = b.staff_name ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">By ' + b.staff_name + '</div>' : '';
+      html += '<div class="report-row">' +
+        '<div style="flex:1">' +
+        '<div style="font-size:14px;font-weight:700">Room ' + b.room_number + ' - ' + b.guest_name + '</div>' +
+        '<div style="font-size:11px;color:var(--text2);margin-top:3px">' + fmtDateTime(b.check_in) +
+        ' <span class="tag ' + b.booking_type + '">' + b.booking_type + '</span> <span class="tag ' + b.status + '">' + b.status + '</span></div>' +
+        staffDiv + '</div>' +
+        '<div style="text-align:right;flex-shrink:0"><div style="font-size:15px;font-weight:800">' + fmt(b.amount) + '</div>' + pendingHtml + '</div></div>';
     });
-    html += `</div>`;
+    html += '</div>';
   }
-
   if (data.expenses.length) {
-    html += `<div class="card"><div class="section-title">💸 Expenses</div>`;
-    const catIcons = { Cleaning:'🧹', Repair:'🔧', Electricity:'💡', Water:'💧', Supplies:'🛒', Laundry:'👕', Food:'🍽️', Salary:'👤', Other:'📦' };
-    data.expenses.forEach(e => {
-      html += `
-        <div class="report-row">
-          <div style="font-size:20px">${catIcons[e.category]||'📦'}</div>
-          <div style="flex:1"><div style="font-size:14px;font-weight:600">${e.category}</div><div style="font-size:12px;color:var(--text2)">${e.description||''} · ${e.staff_name}</div></div>
-          <div style="font-size:15px;font-weight:700;color:var(--red)">${fmt(e.amount)}</div>
-        </div>`;
+    html += '<div class="card"><div class="section-title">Expenses</div>';
+    data.expenses.forEach(function(e) {
+      var desc = e.description || '';
+      html += '<div class="report-row">' +
+        '<div style="flex:1"><div style="font-size:14px;font-weight:600">' + e.category + '</div>' +
+        '<div style="font-size:12px;color:var(--text2)">' + (desc ? desc + ' - ' : '') + e.staff_name + '</div></div>' +
+        '<div style="font-size:15px;font-weight:700;color:var(--red)">' + fmt(e.amount) + '</div></div>';
     });
-    html += `</div>`;
+    html += '</div>';
   }
-
   if (!data.bookings.length && !data.expenses.length) {
-    html += `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">No data for this period</div></div>`;
+    html += '<div class="empty-state"><div class="empty-icon">&#128202;</div><div class="empty-text">No data for this period</div></div>';
   }
-
   document.getElementById('reportResults').innerHTML = html;
 }
 
 // ===== OWNER DASHBOARD =====
 async function loadOwnerDashboard() {
-  document.getElementById('ownerContent').innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3)">Loading...</div>`;
+  document.getElementById('ownerContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Loading...</div>';
   try {
-    const data = await api('GET', '/api/owner/dashboard');
+    var data = await api('GET', '/api/owner/dashboard');
     renderOwnerDashboard(data);
   } catch(e) { showToast('Failed to load dashboard', 'error'); }
 }
 function renderOwnerDashboard(data) {
-  const t = data.totals;
-  const totalRooms = t.total;
-  const occupied   = t.occupied;
-
-  let html = `
-    <div class="summary-total">
-      <div class="big-lbl">Today's Total Revenue</div>
-      <div class="big-num">${fmt(t.revenue)}</div>
-      <div class="summary-row" style="margin-top:16px">
-        <div class="summary-pill"><div class="val">${fmt(t.expenses)}</div><div class="lbl">Expenses</div></div>
-        <div class="summary-pill"><div class="val">${fmt(t.net)}</div><div class="lbl">Net Profit</div></div>
-        <div class="summary-pill"><div class="val">${occupied}/${totalRooms}</div><div class="lbl">Occupied</div></div>
-      </div>
-    </div>
-
-    <button class="btn-sm outline" style="width:100%;margin-bottom:14px" onclick="loadOwnerDashboard()">🔄 Refresh</button>
-    <div class="section-title">🏨 Hotels</div>`;
-
-  const colors = ['#1e40af', '#16a34a', '#9333ea'];
-  data.hotels.forEach((h, i) => {
-    const alerts = h.unpaidCount + h.overdueCount;
-    html += `
-      <div class="hotel-overview-card">
-        <div class="hotel-card-header" style="background:${colors[i]}">
-          <h3>${h.hotel.name}</h3>
-          <div style="display:flex;align-items:center;gap:8px">
-            ${alerts > 0 ? `<span style="background:var(--red);color:white;border-radius:99px;font-size:11px;font-weight:700;padding:2px 8px">⚠️ ${alerts} Alert${alerts>1?'s':''}</span>` : '<span style="background:rgba(255,255,255,0.2);color:white;border-radius:99px;font-size:11px;padding:2px 8px">✓ OK</span>'}
-          </div>
-        </div>
-        <div class="hotel-card-stats">
-          <div class="hcs"><div class="hcs-val text-green">${h.vacantRooms}</div><div class="hcs-lbl">Empty</div></div>
-          <div class="hcs"><div class="hcs-val text-red">${h.occupiedRooms}</div><div class="hcs-lbl">Occupied</div></div>
-          <div class="hcs"><div class="hcs-val text-blue">${fmt(h.todayRevenue)}</div><div class="hcs-lbl">Revenue</div></div>
-        </div>
-        ${h.unpaidCount > 0 ? `<div style="background:var(--red-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--red)">⚠️ ${h.unpaidCount} unpaid booking${h.unpaidCount>1?'s':''}</div>` : ''}
-        ${h.overdueCount > 0 ? `<div style="background:var(--orange-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--orange)">🕐 ${h.overdueCount} overdue checkout${h.overdueCount>1?'s':''}</div>` : ''}
-        ${h.recentBookings.length ? `
-        <div style="padding:12px 16px;border-top:1px solid var(--border)">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Recent Bookings</div>
-          ${h.recentBookings.map(b => `
-            <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)">
-              <span>Room ${b.room_number} · ${b.guest_name}</span>
-              <span class="fw700">${fmt(b.amount)}</span>
-            </div>`).join('')}
-        </div>` : ''}
-      </div>`;
+  var t = data.totals;
+  var html = '<div class="summary-total">' +
+    '<div class="big-lbl">Today\'s Total Revenue</div>' +
+    '<div class="big-num">' + fmt(t.revenue) + '</div>' +
+    '<div class="summary-row" style="margin-top:16px">' +
+    '<div class="summary-pill"><div class="val">' + fmt(t.expenses) + '</div><div class="lbl">Expenses</div></div>' +
+    '<div class="summary-pill"><div class="val">' + fmt(t.net) + '</div><div class="lbl">Net Profit</div></div>' +
+    '<div class="summary-pill"><div class="val">' + t.occupied + '/' + t.total + '</div><div class="lbl">Occupied</div></div>' +
+    '</div></div>' +
+    '<button class="btn-sm outline" style="width:100%;margin-bottom:14px" onclick="loadOwnerDashboard()">Refresh</button>' +
+    '<div class="section-title">Hotels</div>';
+  var colors = ['#1e40af', '#16a34a', '#9333ea'];
+  data.hotels.forEach(function(h, i) {
+    var alerts = h.unpaidCount + h.overdueCount;
+    var alertBadge = alerts > 0 ?
+      '<span style="background:var(--red);color:white;border-radius:99px;font-size:11px;font-weight:700;padding:2px 8px">Alerts: ' + alerts + '</span>' :
+      '<span style="background:rgba(255,255,255,0.2);color:white;border-radius:99px;font-size:11px;padding:2px 8px">OK</span>';
+    var unpaidBanner = h.unpaidCount > 0 ?
+      '<div style="background:var(--red-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--red)">Unpaid: ' + h.unpaidCount + ' booking' + (h.unpaidCount > 1 ? 's' : '') + '</div>' : '';
+    var overdueBanner = h.overdueCount > 0 ?
+      '<div style="background:var(--orange-light);padding:8px 16px;font-size:12px;font-weight:600;color:var(--orange)">Overdue: ' + h.overdueCount + ' checkout' + (h.overdueCount > 1 ? 's' : '') + '</div>' : '';
+    var recentHtml = '';
+    if (h.recentBookings.length) {
+      recentHtml = '<div style="padding:12px 16px;border-top:1px solid var(--border)">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Recent Bookings</div>';
+      h.recentBookings.forEach(function(b) {
+        recentHtml += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)">' +
+          '<span>Room ' + b.room_number + ' - ' + b.guest_name + '</span>' +
+          '<span class="fw700">' + fmt(b.amount) + '</span></div>';
+      });
+      recentHtml += '</div>';
+    }
+    html += '<div class="hotel-overview-card">' +
+      '<div class="hotel-card-header" style="background:' + colors[i] + '">' +
+      '<h3>' + h.hotel.name + '</h3>' +
+      '<div style="display:flex;align-items:center;gap:8px">' + alertBadge + '</div></div>' +
+      '<div class="hotel-card-stats">' +
+      '<div class="hcs"><div class="hcs-val text-green">' + h.vacantRooms + '</div><div class="hcs-lbl">Empty</div></div>' +
+      '<div class="hcs"><div class="hcs-val text-red">' + h.occupiedRooms + '</div><div class="hcs-lbl">Occupied</div></div>' +
+      '<div class="hcs"><div class="hcs-val text-blue">' + fmt(h.todayRevenue) + '</div><div class="hcs-lbl">Revenue</div></div>' +
+      '</div>' + unpaidBanner + overdueBanner + recentHtml + '</div>';
   });
-
   document.getElementById('ownerContent').innerHTML = html;
 }
 
 // ===== CAMERAS SCREEN =====
 function loadCameras() {
-  const html = `
-    <div class="section-title">📹 CCTV Cameras</div>
-    <div class="card mb12" style="padding:16px">
-      <div style="font-size:14px;font-weight:700;margin-bottom:8px">Hikvision NVR</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter your NVR address to view live camera feeds</div>
-      <div style="display:flex;gap:8px">
-        <input type="text" class="form-input" id="nvrIp" placeholder="e.g. 192.168.1.64" style="flex:1">
-        <button class="btn-sm blue" onclick="connectNVR()">Connect</button>
-      </div>
-    </div>
-    <div id="cameraFeeds">
-      ${[
-        { hotel: 'Hotel Vardan',   label: 'Lobby / Floor Cams' },
-        { hotel: 'OY Hotel',       label: 'Lobby / Floor Cams' },
-        { hotel: 'RR Residency',   label: 'Lobby / Floor Cams' },
-      ].map(c => `
-        <div class="card mb12">
-          <div class="section-title" style="margin-bottom:10px">🏨 ${c.hotel}</div>
-          <div class="camera-placeholder">
-            <div class="cam-icon">📷</div>
-            <div class="cam-text">Connect NVR to view live feed</div>
-          </div>
-          <div style="font-size:12px;color:var(--text3);text-align:center">${c.label}</div>
-        </div>`).join('')}
-    </div>
-    <div class="card">
-      <div class="section-title">⚠️ Camera Alerts</div>
-      <div style="font-size:13px;color:var(--text2)">Alerts will appear here once NVR is connected. Room activity will be cross-checked against bookings automatically.</div>
-    </div>`;
+  var cams = [
+    { hotel: 'Hotel Vardan', label: 'Lobby / Floor Cams' },
+    { hotel: 'OY Hotel', label: 'Lobby / Floor Cams' },
+    { hotel: 'RR Residency', label: 'Lobby / Floor Cams' },
+  ];
+  var feedsHtml = '';
+  cams.forEach(function(c) {
+    feedsHtml += '<div class="card mb12">' +
+      '<div class="section-title" style="margin-bottom:10px">' + c.hotel + '</div>' +
+      '<div class="camera-placeholder"><div class="cam-icon">&#128247;</div>' +
+      '<div class="cam-text">Connect NVR to view live feed</div></div>' +
+      '<div style="font-size:12px;color:var(--text3);text-align:center">' + c.label + '</div></div>';
+  });
+  var html = '<div class="section-title">CCTV Cameras</div>' +
+    '<div class="card mb12" style="padding:16px">' +
+    '<div style="font-size:14px;font-weight:700;margin-bottom:8px">Hikvision NVR</div>' +
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Enter your NVR address to view live camera feeds</div>' +
+    '<div style="display:flex;gap:8px">' +
+    '<input type="text" class="form-input" id="nvrIp" placeholder="e.g. 192.168.1.64" style="flex:1">' +
+    '<button class="btn-sm blue" onclick="connectNVR()">Connect</button></div></div>' +
+    '<div id="cameraFeeds">' + feedsHtml + '</div>' +
+    '<div class="card"><div class="section-title">Camera Alerts</div>' +
+    '<div style="font-size:13px;color:var(--text2)">Alerts will appear here once NVR is connected.</div></div>';
   document.getElementById('camerasContent').innerHTML = html;
 }
 function connectNVR() {
-  const ip = document.getElementById('nvrIp').value.trim();
+  var ip = document.getElementById('nvrIp').value.trim();
   if (!ip) { showToast('Please enter NVR IP address', 'error'); return; }
   showToast('Connecting to NVR...', '');
-  // This will be implemented with actual Hikvision ISAPI integration
-  setTimeout(() => showToast(`NVR at ${ip} — share with your installer to complete setup`, ''), 1500);
+  setTimeout(function() { showToast('NVR at ' + ip + ' - share with your installer to complete setup', ''); }, 1500);
 }
 
 // Close modals on overlay click
-document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
+document.querySelectorAll('.modal-overlay').forEach(function(el) {
+  el.addEventListener('click', function(e) { if (e.target === el) closeModal(el.id); });
 });
 
 // Init
