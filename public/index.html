@@ -522,6 +522,28 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   </div>
 </div>
 
+<!-- CANCEL BOOKING MODAL -->
+<div class="modal-overlay" id="cancelModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Cancel Booking</h2>
+      <button class="modal-close" onclick="closeModal('cancelModal')">✕</button>
+    </div>
+    <div id="cancelInfo"></div>
+    <div style="margin-top:14px">
+      <label class="form-label">Reason for cancellation (optional)</label>
+      <input type="text" class="form-input" id="cancelReason" placeholder="e.g. Guest requested, No-show...">
+    </div>
+    <div style="margin-top:14px;padding:10px;background:#fef2f2;border-radius:8px;font-size:13px;color:#dc2626;font-weight:600">
+      ⚠️ This will mark the booking as cancelled. The room will become available again.
+    </div>
+    <div class="row-btns" style="margin-top:14px">
+      <button class="btn-sm" style="flex:1;background:#f3f4f6;color:#374151" onclick="closeModal('cancelModal')">Keep Booking</button>
+      <button class="btn-sm red" style="flex:1" onclick="confirmCancel()">🚫 Cancel Booking</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOGOUT CONFIRM -->
 <div class="modal-overlay" id="logoutModal">
   <div class="modal">
@@ -587,6 +609,7 @@ var STATE = {
   expenseDate: new Date().toISOString().substring(0,10),
   activeBookingId: null,
   activeCheckoutId: null,
+  activeCancelId: null,
   activeRoomId: null,
   activeHotelId: null,
   ownerSelectedHotel: 'all',
@@ -819,7 +842,8 @@ function openRoomAction(roomId) {
       'Paid: <strong class="' + paidClass + '">' + fmt(b.payment_received) + '</strong> &nbsp;&middot;&nbsp; ' +
       'Pending: <strong class="' + pendingClass + '">' + fmt(Math.max(0, pending)) + '</strong></div>' +
       '<div class="row-btns">' + payBtn +
-      '<button class="btn-sm red" style="flex:1" onclick="closeModal(\'roomModal\');openCheckoutModal(' + b.id + ')">Check Out</button></div>';
+      '<button class="btn-sm red" style="flex:1" onclick="closeModal(\'roomModal\');openCheckoutModal(' + b.id + ')">Check Out</button></div>' +
+      '<div style="margin-top:8px"><button class="btn-sm" style="width:100%;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;font-size:12px" onclick="closeModal(\'roomModal\');openCancelModal(' + b.id + ')">🚫 Cancel Booking</button></div>';
   }
   el.innerHTML = html;
   openModal('roomModal');
@@ -1029,6 +1053,35 @@ async function confirmCheckout() {
     await api('PUT', '/api/bookings/' + STATE.activeCheckoutId + '/checkout');
     closeModal('checkoutModal');
     showToast('Guest checked out!', 'success');
+    loadRooms();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== CANCEL BOOKING =====
+function openCancelModal(bookingId) {
+  STATE.activeCancelId = bookingId;
+  var room = STATE.rooms.find(function(r) { return r.booking && r.booking.id === bookingId; });
+  if (room) {
+    var b = room.booking;
+    document.getElementById('cancelInfo').innerHTML =
+      '<div class="booking-info-box" style="margin-bottom:0">' +
+      '<div class="booking-info-row"><span class="lbl">Guest</span><span class="val">' + b.guest_name + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Room</span><span class="val">' + room.room_number + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Check In</span><span class="val">' + fmtDateTime(b.check_in) + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Amount</span><span class="val fw700">' + fmt(b.amount) + '</span></div>' +
+      '<div class="booking-info-row"><span class="lbl">Paid</span><span class="val">' + fmt(b.payment_received) + '</span></div>' +
+      '</div>';
+  }
+  document.getElementById('cancelReason').value = '';
+  openModal('cancelModal');
+}
+
+async function confirmCancel() {
+  try {
+    var reason = document.getElementById('cancelReason').value.trim();
+    await api('PUT', '/api/bookings/' + STATE.activeCancelId + '/cancel', { reason: reason || 'No reason given' });
+    closeModal('cancelModal');
+    showToast('Booking cancelled', 'success');
     loadRooms();
   } catch(e) { showToast(e.message, 'error'); }
 }
