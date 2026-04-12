@@ -93,7 +93,7 @@ function initDB() {
   const ih = db.prepare('INSERT OR IGNORE INTO hotels (id, name, code) VALUES (?, ?, ?)');
   ih.run(1, 'Hotel Vardan', 'vardan');
   ih.run(2, 'OY Hotel', 'oy');
-  ih.run(3, 'RR Residency', 'rr');
+  ih.run(3, 'Royal Residency', 'rr');
 
   // Seed rooms
   const ir = db.prepare('INSERT OR IGNORE INTO rooms (hotel_id, room_number, floor) VALUES (?, ?, ?)');
