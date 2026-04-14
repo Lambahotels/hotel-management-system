@@ -384,43 +384,12 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
     </div>
 
     <div class="form-group">
-      <label>ID Proof Type *</label>
-      <div class="cat-grid" id="idProofTypeGrid">
-        <button class="cat-btn" onclick="selectIdProofType(this,'Aadhar')">🪪 Aadhar</button>
-        <button class="cat-btn" onclick="selectIdProofType(this,'PAN')">🗂 PAN Card</button>
-        <button class="cat-btn" onclick="selectIdProofType(this,'Passport')">📕 Passport</button>
-        <button class="cat-btn" onclick="selectIdProofType(this,'DL')">🚗 Driving Licence</button>
-        <button class="cat-btn" onclick="selectIdProofType(this,'Voter ID')">🗳 Voter ID</button>
-        <button class="cat-btn" onclick="selectIdProofType(this,'Other')">📄 Other</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <label style="margin-bottom:0">👤 Guests &amp; ID Proof</label>
+        <button type="button" onclick="addGuest()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer">＋ Add Guest</button>
       </div>
-    </div>
-    <div class="form-group" id="idProofUploadGroup">
-      <label>ID Proof * <span style="font-weight:400;font-size:12px;color:var(--text2)">(Front required · Back optional)</span></label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
-        <div>
-          <div style="font-size:11px;color:var(--text2);font-weight:700;margin-bottom:5px;text-transform:uppercase">Front ✱</div>
-          <div class="id-proof-area" id="idProofAreaFront" onclick="document.getElementById('idProofFileFront').click()">
-            <div id="idProofPlaceholderFront" style="text-align:center;color:var(--text3);padding:14px 8px">
-              <div style="font-size:22px;margin-bottom:4px">📷</div>
-              <div style="font-size:11px">Tap to capture or upload</div>
-            </div>
-            <img id="idProofPreviewFront" style="display:none;max-width:100%;max-height:130px;border-radius:8px;object-fit:contain">
-          </div>
-          <input type="file" id="idProofFileFront" accept="image/*" style="display:none" onchange="handleIdProofUpload(this,'front')">
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text2);font-weight:700;margin-bottom:5px;text-transform:uppercase">Back</div>
-          <div class="id-proof-area" id="idProofAreaBack" onclick="document.getElementById('idProofFileBack').click()">
-            <div id="idProofPlaceholderBack" style="text-align:center;color:var(--text3);padding:14px 8px">
-              <div style="font-size:22px;margin-bottom:4px">📷</div>
-              <div style="font-size:11px">Tap to capture or upload</div>
-            </div>
-            <img id="idProofPreviewBack" style="display:none;max-width:100%;max-height:130px;border-radius:8px;object-fit:contain">
-          </div>
-          <input type="file" id="idProofFileBack" accept="image/*" style="display:none" onchange="handleIdProofUpload(this,'back')">
-        </div>
-      </div>
-      <div id="idProofError" style="color:var(--red);font-size:12px;margin-top:4px;display:none">Front ID proof is required</div>
+      <div id="guestIdList"></div>
+      <div id="idProofError" style="color:var(--red);font-size:12px;margin-top:4px;display:none">Please upload front ID for at least one guest</div>
     </div>
 
     <button class="btn-primary" onclick="submitBooking()">Confirm Booking</button>
@@ -882,31 +851,49 @@ function openBookingForm(roomId) {
   document.getElementById('expectedCheckout').value = '';
   document.getElementById('checkInDate').value = today();
   document.getElementById('numNights').value = '1';
-  // Reset ID proof
+  // Reset ID proof & guests
   STATE.currentIdProofFront = null; STATE.currentIdProofBack = null; STATE.currentIdProofData = null;
-  document.querySelectorAll('#idProofTypeGrid .cat-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.getElementById('idProofPreviewFront').style.display = 'none';
-  document.getElementById('idProofPreviewBack').style.display = 'none';
-  document.getElementById('idProofPlaceholderFront').style.display = '';
-  document.getElementById('idProofPlaceholderBack').style.display = '';
-  document.getElementById('idProofAreaFront').classList.remove('has-image');
-  document.getElementById('idProofAreaBack').classList.remove('has-image');
-  document.getElementById('idProofError').style.display = 'none';
-  document.getElementById('idProofFileFront').value = '';
-  document.getElementById('idProofFileBack').value = '';
+  var errEl = document.getElementById('idProofError'); if (errEl) errEl.style.display = 'none';
+  initGuestList();
   setBookingType('hourly');
   openModal('bookingModal');
 }
 
-function selectIdProofType(btn, type) {
-  STATE.currentIdProofType = type;
-  document.querySelectorAll('#idProofTypeGrid .cat-btn').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
+function selectIdProofType(btn, type) { selectGuestIdType(0, type, btn); }
+
+function initGuestList() {
+  STATE.guests = [{ name: '', idType: null, front: null, back: null }];
+  renderGuestList();
 }
 
-function handleIdProofUpload(input, side) {
+function addGuest() {
+  STATE.guests.push({ name: '', idType: null, front: null, back: null });
+  renderGuestList();
+  setTimeout(function() {
+    var last = document.getElementById('guestIdList')?.lastElementChild;
+    if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
+}
+
+function removeGuest(idx) {
+  if (idx === 0 || !STATE.guests[idx]) return;
+  STATE.guests.splice(idx, 1);
+  updateGuestIdProofData();
+  renderGuestList();
+}
+
+function selectGuestIdType(idx, type, btn) {
+  if (!STATE.guests[idx]) return;
+  STATE.guests[idx].idType = type;
+  var grid = document.getElementById('guestTypeGrid_' + idx);
+  if (grid) grid.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  if (idx === 0) STATE.currentIdProofType = type;
+}
+
+function handleGuestIdUpload(input, idx, side) {
   var file = input.files[0];
-  if (!file) return;
+  if (!file || !STATE.guests[idx]) return;
   var reader = new FileReader();
   reader.onload = function(e) {
     var img = new Image();
@@ -918,28 +905,77 @@ function handleIdProofUpload(input, side) {
       canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
       var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      if (!side || side === 'front') {
-        STATE.currentIdProofFront = dataUrl;
-        document.getElementById('idProofPreviewFront').src = dataUrl;
-        document.getElementById('idProofPreviewFront').style.display = '';
-        document.getElementById('idProofPlaceholderFront').style.display = 'none';
-        document.getElementById('idProofAreaFront').classList.add('has-image');
-        document.getElementById('idProofError').style.display = 'none';
-      } else {
-        STATE.currentIdProofBack = dataUrl;
-        document.getElementById('idProofPreviewBack').src = dataUrl;
-        document.getElementById('idProofPreviewBack').style.display = '';
-        document.getElementById('idProofPlaceholderBack').style.display = 'none';
-        document.getElementById('idProofAreaBack').classList.add('has-image');
-      }
-      STATE.currentIdProofData = JSON.stringify({
-        front: STATE.currentIdProofFront || null,
-        back: STATE.currentIdProofBack || null
-      });
+      STATE.guests[idx][side] = dataUrl;
+      updateGuestIdProofData();
+      var previewId = 'guestFrontPreview_' + idx;
+      var phId = 'guestFrontPh_' + idx;
+      var areaId = 'guestFrontArea_' + idx;
+      if (side === 'back') { previewId = 'guestBackPreview_' + idx; phId = 'guestBackPh_' + idx; areaId = 'guestBackArea_' + idx; }
+      var preview = document.getElementById(previewId);
+      var ph = document.getElementById(phId);
+      var area = document.getElementById(areaId);
+      if (preview) { preview.src = dataUrl; preview.style.display = ''; }
+      if (ph) ph.style.display = 'none';
+      if (area) area.style.borderColor = 'var(--green)';
+      var errEl = document.getElementById('idProofError');
+      if (errEl) errEl.style.display = 'none';
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function handleIdProofUpload(input, side) { handleGuestIdUpload(input, 0, side||'front'); }
+
+function updateGuestIdProofData() {
+  STATE.currentIdProofFront = (STATE.guests[0] || {}).front || null;
+  STATE.currentIdProofBack = (STATE.guests[0] || {}).back || null;
+  STATE.currentIdProofType = (STATE.guests[0] || {}).idType || STATE.currentIdProofType;
+  STATE.currentIdProofData = JSON.stringify({ guests: STATE.guests });
+}
+
+function renderGuestList() {
+  var container = document.getElementById('guestIdList');
+  if (!container) return;
+  var idTypes = [['Aadhar','🪪'],['PAN','🗂'],['Passport','📕'],['DL','🚗'],['Voter ID','🗳'],['Other','📄']];
+  var html = '';
+  (STATE.guests||[]).forEach(function(g, idx) {
+    var isFirst = idx === 0;
+    var label = isFirst ? 'Guest 1 (Primary)' : 'Guest ' + (idx + 1);
+    var removeBtn = isFirst ? '' : '<button type="button" onclick="removeGuest('+idx+')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">✕ Remove</button>';
+    var nameField = isFirst ? '' : '<input type="text" class="form-input" placeholder="Guest '+(idx+1)+' full name *" value="'+(g.name||'').replace(/"/g,"&quot;")+'" oninput="STATE.guests['+idx+'].name=this.value" style="margin-bottom:10px">';
+    var typeBtns = idTypes.map(function(t) {
+      var act = g.idType===t[0]?' active':'';
+      return '<button type="button" class="cat-btn'+act+'" onclick="selectGuestIdType('+idx+',''+t[0]+'',this)" style="font-size:11px;padding:5px 8px">'+t[1]+' '+t[0]+'</button>';
+    }).join('');
+    var frontContent = g.front
+      ? '<img id="guestFrontPreview_'+idx+'" src="'+g.front+'" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain">'
+      : '<div id="guestFrontPh_'+idx+'" style="text-align:center;color:var(--text3);padding:12px 6px"><div style="font-size:20px;margin-bottom:3px">📷</div><div style="font-size:10px">Tap to capture or upload</div></div><img id="guestFrontPreview_'+idx+'" style="display:none">';
+    var backContent = g.back
+      ? '<img id="guestBackPreview_'+idx+'" src="'+g.back+'" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain">'
+      : '<div id="guestBackPh_'+idx+'" style="text-align:center;color:var(--text3);padding:12px 6px"><div style="font-size:20px;margin-bottom:3px">📷</div><div style="font-size:10px">Tap to capture or upload</div></div><img id="guestBackPreview_'+idx+'" style="display:none">';
+    html +=
+      '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+          '<span style="font-size:13px;font-weight:700;color:var(--primary)">👤 '+label+'</span>'+removeBtn+
+        '</div>'+
+        nameField+
+        '<div id="guestTypeGrid_'+idx+'" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">'+typeBtns+'</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+          '<div>'+
+            '<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Front ✱</div>'+
+            '<div class="id-proof-area" id="guestFrontArea_'+idx+'" style="'+(g.front?'border-color:var(--green)':'')+'" onclick="document.getElementById('guestFrontFile_'+idx+'').click()">'+frontContent+'</div>'+
+            '<input type="file" id="guestFrontFile_'+idx+'" accept="image/*" style="display:none" onchange="handleGuestIdUpload(this,'+idx+','front')">'+
+          '</div>'+
+          '<div>'+
+            '<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Back</div>'+
+            '<div class="id-proof-area" id="guestBackArea_'+idx+'" style="'+(g.back?'border-color:var(--green)':'')+'" onclick="document.getElementById('guestBackFile_'+idx+'').click()">'+backContent+'</div>'+
+            '<input type="file" id="guestBackFile_'+idx+'" accept="image/*" style="display:none" onchange="handleGuestIdUpload(this,'+idx+','back')">'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+  });
+  container.innerHTML = html;
 }
 
 function setBookingType(type) {
@@ -955,17 +991,18 @@ async function submitBooking() {
   var amount    = document.getElementById('bookingAmount').value;
   if (!guestName) { showToast('Please enter guest name', 'error'); return; }
   if (!amount || parseFloat(amount) < 0) { showToast('Please enter amount', 'error'); return; }
-  if (!STATE.currentIdProofType) { showToast('Please select ID proof type', 'error'); return; }
-  if (!STATE.currentIdProofFront && !STATE.currentIdProofData) {
+  if (!STATE.guests || !STATE.guests[0] || !STATE.guests[0].idType) { showToast('Please select ID type for Guest 1', 'error'); return; }
+  if (!STATE.guests || !STATE.guests[0] || !STATE.guests[0].front) {
     document.getElementById('idProofError').style.display = '';
-    showToast('Please upload front of ID proof', 'error');
+    showToast('Please upload front ID for Guest 1', 'error');
     return;
   }
+  updateGuestIdProofData();
   var type = STATE.currentBookingType;
   var base = { room_id: STATE.activeRoomId, hotel_id: STATE.activeHotelId,
     guest_name: guestName, guest_phone: document.getElementById('guestPhone').value,
     amount: amount, notes: document.getElementById('bookingNotes').value,
-    id_proof: STATE.currentIdProofData, id_proof_type: STATE.currentIdProofType };
+    id_proof: STATE.currentIdProofData, id_proof_type: (STATE.guests&&STATE.guests[0]&&STATE.guests[0].idType)||STATE.currentIdProofType };
   var body;
   if (type === 'hourly') {
     var checkIn = document.getElementById('checkInTime').value;
@@ -1469,9 +1506,20 @@ async function viewCustomerDetail(bookingId, guestName) {
     '</div>';
     if (d.id_proof && d.id_proof.startsWith('{')) {
       try {
-        var parts = JSON.parse(d.id_proof);
-        if (parts.front) html += '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Front</div><img src="' + parts.front + '" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
-        if (parts.back) html += '<div><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Back</div><img src="' + parts.back + '" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
+        var proofData = JSON.parse(d.id_proof);
+        if (proofData.guests && proofData.guests.length) {
+          proofData.guests.forEach(function(g, i) {
+            var gn = g.name || (i === 0 ? (d.guest_name||'Guest 1') : 'Guest '+(i+1));
+            html += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">';
+            html += '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px">👤 '+gn+(g.idType?' · '+g.idType:'')+'</div>';
+            if (g.front) html += '<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">FRONT</div><img src="'+g.front+'" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
+            if (g.back) html += '<div><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">BACK</div><img src="'+g.back+'" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
+            html += '</div>';
+          });
+        } else {
+          if (proofData.front) html += '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Front</div><img src="' + proofData.front + '" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
+          if (proofData.back) html += '<div><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Back</div><img src="' + proofData.back + '" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
+        }
       } catch(ex) { html += '<img src="' + d.id_proof + '" style="max-width:100%;border-radius:10px">'; }
     } else if (d.id_proof && d.id_proof.startsWith('data:image')) {
       html += '<img src="' + d.id_proof + '" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)">';
