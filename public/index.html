@@ -395,16 +395,32 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
       </div>
     </div>
     <div class="form-group" id="idProofUploadGroup">
-      <label>Upload / Capture ID Proof *</label>
-      <div class="id-proof-area" id="idProofArea" onclick="document.getElementById('idProofFileInput').click()">
-        <div id="idProofPlaceholder" style="text-align:center;color:var(--text3);padding:18px 0">
-          <div style="font-size:28px;margin-bottom:6px">📷</div>
-          <div style="font-size:13px">Tap to take photo or upload image</div>
+      <label>ID Proof * <span style="font-weight:400;font-size:12px;color:var(--text2)">(Front required · Back optional)</span></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+        <div>
+          <div style="font-size:11px;color:var(--text2);font-weight:700;margin-bottom:5px;text-transform:uppercase">Front ✱</div>
+          <div class="id-proof-area" id="idProofAreaFront" onclick="document.getElementById('idProofFileFront').click()">
+            <div id="idProofPlaceholderFront" style="text-align:center;color:var(--text3);padding:14px 8px">
+              <div style="font-size:22px;margin-bottom:4px">📷</div>
+              <div style="font-size:11px">Tap to capture or upload</div>
+            </div>
+            <img id="idProofPreviewFront" style="display:none;max-width:100%;max-height:130px;border-radius:8px;object-fit:contain">
+          </div>
+          <input type="file" id="idProofFileFront" accept="image/*" style="display:none" onchange="handleIdProofUpload(this,'front')">
         </div>
-        <img id="idProofPreview" style="display:none;max-width:100%;max-height:180px;border-radius:8px;object-fit:contain">
+        <div>
+          <div style="font-size:11px;color:var(--text2);font-weight:700;margin-bottom:5px;text-transform:uppercase">Back</div>
+          <div class="id-proof-area" id="idProofAreaBack" onclick="document.getElementById('idProofFileBack').click()">
+            <div id="idProofPlaceholderBack" style="text-align:center;color:var(--text3);padding:14px 8px">
+              <div style="font-size:22px;margin-bottom:4px">📷</div>
+              <div style="font-size:11px">Tap to capture or upload</div>
+            </div>
+            <img id="idProofPreviewBack" style="display:none;max-width:100%;max-height:130px;border-radius:8px;object-fit:contain">
+          </div>
+          <input type="file" id="idProofFileBack" accept="image/*" style="display:none" onchange="handleIdProofUpload(this,'back')">
+        </div>
       </div>
-      <input type="file" id="idProofFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleIdProofUpload(this)">
-      <div id="idProofError" style="color:var(--red);font-size:12px;margin-top:4px;display:none">ID proof is required</div>
+      <div id="idProofError" style="color:var(--red);font-size:12px;margin-top:4px;display:none">Front ID proof is required</div>
     </div>
 
     <button class="btn-primary" onclick="submitBooking()">Confirm Booking</button>
@@ -867,12 +883,17 @@ function openBookingForm(roomId) {
   document.getElementById('checkInDate').value = today();
   document.getElementById('numNights').value = '1';
   // Reset ID proof
+  STATE.currentIdProofFront = null; STATE.currentIdProofBack = null; STATE.currentIdProofData = null;
   document.querySelectorAll('#idProofTypeGrid .cat-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.getElementById('idProofPreview').style.display = 'none';
-  document.getElementById('idProofPlaceholder').style.display = '';
-  document.getElementById('idProofArea').classList.remove('has-image');
+  document.getElementById('idProofPreviewFront').style.display = 'none';
+  document.getElementById('idProofPreviewBack').style.display = 'none';
+  document.getElementById('idProofPlaceholderFront').style.display = '';
+  document.getElementById('idProofPlaceholderBack').style.display = '';
+  document.getElementById('idProofAreaFront').classList.remove('has-image');
+  document.getElementById('idProofAreaBack').classList.remove('has-image');
   document.getElementById('idProofError').style.display = 'none';
-  document.getElementById('idProofFileInput').value = '';
+  document.getElementById('idProofFileFront').value = '';
+  document.getElementById('idProofFileBack').value = '';
   setBookingType('hourly');
   openModal('bookingModal');
 }
@@ -883,26 +904,38 @@ function selectIdProofType(btn, type) {
   btn.classList.add('active');
 }
 
-function handleIdProofUpload(input) {
+function handleIdProofUpload(input, side) {
   var file = input.files[0];
   if (!file) return;
   var reader = new FileReader();
   reader.onload = function(e) {
     var img = new Image();
     img.onload = function() {
-      // Resize to max 1024px wide for storage efficiency
       var maxW = 1024;
       var scale = img.width > maxW ? maxW / img.width : 1;
       var canvas = document.createElement('canvas');
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      STATE.currentIdProofData = canvas.toDataURL('image/jpeg', 0.8);
-      document.getElementById('idProofPreview').src = STATE.currentIdProofData;
-      document.getElementById('idProofPreview').style.display = '';
-      document.getElementById('idProofPlaceholder').style.display = 'none';
-      document.getElementById('idProofArea').classList.add('has-image');
-      document.getElementById('idProofError').style.display = 'none';
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      if (!side || side === 'front') {
+        STATE.currentIdProofFront = dataUrl;
+        document.getElementById('idProofPreviewFront').src = dataUrl;
+        document.getElementById('idProofPreviewFront').style.display = '';
+        document.getElementById('idProofPlaceholderFront').style.display = 'none';
+        document.getElementById('idProofAreaFront').classList.add('has-image');
+        document.getElementById('idProofError').style.display = 'none';
+      } else {
+        STATE.currentIdProofBack = dataUrl;
+        document.getElementById('idProofPreviewBack').src = dataUrl;
+        document.getElementById('idProofPreviewBack').style.display = '';
+        document.getElementById('idProofPlaceholderBack').style.display = 'none';
+        document.getElementById('idProofAreaBack').classList.add('has-image');
+      }
+      STATE.currentIdProofData = JSON.stringify({
+        front: STATE.currentIdProofFront || null,
+        back: STATE.currentIdProofBack || null
+      });
     };
     img.src = e.target.result;
   };
@@ -923,9 +956,9 @@ async function submitBooking() {
   if (!guestName) { showToast('Please enter guest name', 'error'); return; }
   if (!amount || parseFloat(amount) < 0) { showToast('Please enter amount', 'error'); return; }
   if (!STATE.currentIdProofType) { showToast('Please select ID proof type', 'error'); return; }
-  if (!STATE.currentIdProofData) {
+  if (!STATE.currentIdProofFront && !STATE.currentIdProofData) {
     document.getElementById('idProofError').style.display = '';
-    showToast('Please capture or upload ID proof', 'error');
+    showToast('Please upload front of ID proof', 'error');
     return;
   }
   var type = STATE.currentBookingType;
@@ -1176,7 +1209,9 @@ async function loadBookings() {
         'Paid: <strong class="' + paidClass + '">' + fmt(b.payment_received) + '</strong>' +
         ' - Pending: <strong class="' + pendingClass + '">' + fmt(Math.max(0,pending)) + '</strong>' +
         ' &nbsp;' + payTag + '&nbsp;' + statusTag + '</div>' +
-        '<div style="font-size:11px;color:var(--text3)">By ' + b.staff_name + '</div></div>';
+        '<div style="font-size:11px;color:var(--text3)">By ' + b.staff_name + '</div>' +
+        (pending > 0 ? '<button class="btn-primary" style="width:100%;margin-top:10px;padding:10px;font-size:14px" onclick="openPaymentModal(' + b.id + ')">💰 Add Payment — ' + fmt(pending) + ' due</button>' : '') +
+        '</div>';
     });
     document.getElementById('bookingsList').innerHTML = html;
   } catch(e) { showToast('Failed to load bookings', 'error'); }
@@ -1416,6 +1451,7 @@ async function runCustomerSearch() {
         '<div style="font-size:14px;font-weight:700">' + fmt(b.amount) + '</div></div>' +
         (pending > 0 ? '<div style="font-size:11px;color:var(--red);margin-top:4px">Due: ' + fmt(pending) + '</div>' : '') +
         '<div style="font-size:11px;color:var(--primary);margin-top:6px;font-weight:600">Tap to view ID proof &rarr;</div>' +
+        (pending > 0 ? '<div style="margin-top:8px"><button class="btn-primary" style="width:100%;padding:8px;font-size:13px" onclick="event.stopPropagation();openPaymentModal(' + b.id + ')">💰 Add Payment — ' + fmt(pending) + ' due</button></div>' : '') +
         '</div>';
     });
     document.getElementById('customerSearchResults').innerHTML = html;
@@ -1431,7 +1467,13 @@ async function viewCustomerDetail(bookingId, guestName) {
     var html = '<div style="margin-bottom:10px">' +
       '<span class="mode-badge mode-upi" style="font-size:13px">' + (d.id_proof_type || 'ID') + '</span>' +
     '</div>';
-    if (d.id_proof && d.id_proof.startsWith('data:image')) {
+    if (d.id_proof && d.id_proof.startsWith('{')) {
+      try {
+        var parts = JSON.parse(d.id_proof);
+        if (parts.front) html += '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Front</div><img src="' + parts.front + '" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
+        if (parts.back) html += '<div><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Back</div><img src="' + parts.back + '" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
+      } catch(ex) { html += '<img src="' + d.id_proof + '" style="max-width:100%;border-radius:10px">'; }
+    } else if (d.id_proof && d.id_proof.startsWith('data:image')) {
       html += '<img src="' + d.id_proof + '" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)">';
     } else if (d.id_proof) {
       html += '<div style="color:var(--text2);font-size:13px;padding:20px">ID stored but cannot preview this format.</div>';
