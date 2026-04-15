@@ -637,7 +637,7 @@ async function init() {
   } catch(e) {}
 }
 
-async 
+
 function uploadId(idx, side) {
   var id=(side===0?'guestFront':'guestBack')+'File_'+idx;
   var el=document.getElementById(id);
@@ -646,7 +646,7 @@ function uploadId(idx, side) {
 function handleIdUp(el, idx, s) {
   handleGuestIdUpload(el, idx, s===0?'front':'back');
 }
-function doLogin() {
+async function doLogin() {
   var u = document.getElementById('loginUser').value.trim();
   var p = document.getElementById('loginPass').value;
   var err = document.getElementById('loginError');
