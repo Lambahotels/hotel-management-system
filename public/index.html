@@ -974,12 +974,12 @@ function renderGuestList() {
           '<div>'+
             '<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Front ✱</div>'+
             '<div class="id-proof-area" id="guestFrontArea_'+idx+'" style="'+(g.front?'border-color:var(--green)':'')+'" onclick="uploadId('+idx+', 0)">'+frontContent+'</div>'+
-            '<input type="file" id="guestFrontFile_'+idx+'" accept="image/*" style="display:none" onchange="handleGuestIdUpload(this,'+idx+','front')">'+
+            '<input type="file" id="guestFrontFile_'+idx+'" accept="image/*" style="display:none" onchange="handleIdUp(this,'+idx+', 0)">'+
           '</div>'+
           '<div>'+
             '<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Back</div>'+
             '<div class="id-proof-area" id="guestBackArea_'+idx+'" style="'+(g.back?'border-color:var(--green)':'')+'" onclick="uploadId('+idx+', 1)">'+backContent+'</div>'+
-            '<input type="file" id="guestBackFile_'+idx+'" accept="image/*" style="display:none" onchange="handleGuestIdUpload(this,'+idx+','back')">'+
+            '<input type="file" id="guestBackFile_'+idx+'" accept="image/*" style="display:none" onchange="handleIdUp(this,'+idx+', 1)">'+
           '</div>'+
         '</div>'+
       '</div>';
