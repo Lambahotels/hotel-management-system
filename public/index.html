@@ -964,12 +964,12 @@ function renderGuestList() {
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
           '<div>'+
             '<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Front ✱</div>'+
-            '<div class="id-proof-area" id="guestFrontArea_'+idx+'" style="'+(g.front?'border-color:var(--green)':'')+'" onclick="document.getElementById('guestFrontFile_'+idx+'').click()">'+frontContent+'</div>'+
+            '<div class="id-proof-area" id="guestFrontArea_'+idx+'" style="'+(g.front?'border-color:var(--green)':'')+'" onclick="document.getElementById(\'guestFrontFile_'+ idx +\').click()">'+frontContent+'</div>'+
             '<input type="file" id="guestFrontFile_'+idx+'" accept="image/*" style="display:none" onchange="handleGuestIdUpload(this,'+idx+','front')">'+
           '</div>'+
           '<div>'+
             '<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Back</div>'+
-            '<div class="id-proof-area" id="guestBackArea_'+idx+'" style="'+(g.back?'border-color:var(--green)':'')+'" onclick="document.getElementById('guestBackFile_'+idx+'').click()">'+backContent+'</div>'+
+            '<div class="id-proof-area" id="guestBackArea_'+idx+'" style="'+(g.back?'border-color:var(--green)':'')+'" onclick="document.getElementById(\'guestBackFile_'+ idx +\').click()">'+backContent+'</div>'+
             '<input type="file" id="guestBackFile_'+idx+'" accept="image/*" style="display:none" onchange="handleGuestIdUpload(this,'+idx+','back')">'+
           '</div>'+
         '</div>'+
