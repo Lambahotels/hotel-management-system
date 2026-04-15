@@ -230,9 +230,9 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
 <!-- LOGIN SCREEN -->
 <div id="loginScreen">
-  <div class="login-logo">ð¨</div>
+  <div class="login-logo">🏨</div>
   <div class="login-title">Hotel Management</div>
-  <div class="login-sub">3 Hotels Â· Simple & Fast</div>
+  <div class="login-sub">3 Hotels · Simple & Fast</div>
   <div class="login-card">
     <h2>Login</h2>
     <div class="form-group">
@@ -256,10 +256,10 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
   <!-- HEADER -->
   <div class="header">
-    <span id="headerIcon" style="font-size:22px">ð¨</span>
+    <span id="headerIcon" style="font-size:22px">🏨</span>
     <h1 id="headerTitle">Hotel Management</h1>
     <span id="headerHotel" class="hotel-badge" style="display:none"></span>
-    <button class="icon-btn" onclick="showLogoutConfirm()" title="Logout">â¬¡</button>
+    <button class="icon-btn" onclick="showLogoutConfirm()" title="Logout">⬡</button>
   </div>
 
   <!-- MAIN CONTENT AREA -->
@@ -273,9 +273,9 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
     <!-- BOOKINGS SCREEN -->
     <div id="screenBookings" class="screen">
       <div class="date-nav">
-        <button onclick="changeBookingDate(-1)">â¹</button>
+        <button onclick="changeBookingDate(-1)">‹</button>
         <div class="date-display" id="bookingDateDisplay">Today</div>
-        <button onclick="changeBookingDate(1)">âº</button>
+        <button onclick="changeBookingDate(1)">›</button>
       </div>
       <div id="bookingsList"></div>
     </div>
@@ -283,13 +283,13 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
     <!-- EXPENSES SCREEN -->
     <div id="screenExpenses" class="screen">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div class="section-title" style="margin:0">ð¸ Expenses</div>
+        <div class="section-title" style="margin:0">💸 Expenses</div>
         <button class="btn-sm blue" onclick="openExpenseModal()">+ Add Expense</button>
       </div>
       <div class="date-nav">
-        <button onclick="changeExpenseDate(-1)">â¹</button>
+        <button onclick="changeExpenseDate(-1)">‹</button>
         <div class="date-display" id="expenseDateDisplay">Today</div>
-        <button onclick="changeExpenseDate(1)">âº</button>
+        <button onclick="changeExpenseDate(1)">›</button>
       </div>
       <div id="expensesList"></div>
     </div>
@@ -331,12 +331,12 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   <div class="modal">
     <div class="modal-header">
       <h2 id="bookingModalTitle">Book Room</h2>
-      <button class="modal-close" onclick="closeModal('bookingModal')">â</button>
+      <button class="modal-close" onclick="closeModal('bookingModal')">✕</button>
     </div>
 
     <div class="type-toggle mb12">
-      <button class="type-btn active" id="typeHourly" onclick="setBookingType('hourly')">â° By Hours</button>
-      <button class="type-btn" id="typeNightly" onclick="setBookingType('nightly')">ð By Nights</button>
+      <button class="type-btn active" id="typeHourly" onclick="setBookingType('hourly')">⏰ By Hours</button>
+      <button class="type-btn" id="typeNightly" onclick="setBookingType('nightly')">🌙 By Nights</button>
     </div>
 
     <div class="form-group">
@@ -375,7 +375,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
     </div>
 
     <div class="form-group">
-      <label>Amount (â¹) *</label>
+      <label>Amount (₹) *</label>
       <input type="number" class="form-input" id="bookingAmount" placeholder="e.g. 500, 1200" min="0" inputmode="numeric">
     </div>
     <div class="form-group">
@@ -385,8 +385,8 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 
     <div class="form-group">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <label style="margin-bottom:0">ð¤ Guests &amp; ID Proof</label>
-        <button type="button" onclick="addGuest()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer">ï¼ Add Guest</button>
+        <label style="margin-bottom:0">👤 Guests &amp; ID Proof</label>
+        <button type="button" onclick="addGuest()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer">＋ Add Guest</button>
       </div>
       <div id="guestIdList"></div>
       <div id="idProofError" style="color:var(--red);font-size:12px;margin-top:4px;display:none">Please upload front ID for at least one guest</div>
@@ -401,24 +401,24 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   <div class="modal">
     <div class="modal-header">
       <h2>Add Payment</h2>
-      <button class="modal-close" onclick="closeModal('paymentModal')">â</button>
+      <button class="modal-close" onclick="closeModal('paymentModal')">✕</button>
     </div>
     <div class="booking-info-box" id="paymentBookingInfo"></div>
     <div class="form-group">
-      <label>Amount Received (â¹) *</label>
+      <label>Amount Received (₹) *</label>
       <input type="number" class="form-input" id="paymentAmount" placeholder="Enter amount" min="0" inputmode="numeric" oninput="updatePaymentBalance()">
     </div>
     <div id="paymentBalanceInfo" style="display:none;margin:-4px 0 10px;padding:8px 12px;border-radius:8px;background:var(--bg2);font-size:13px">
       <span style="color:var(--text2)">Remaining after this payment: </span>
-      <span id="paymentBalanceAmt" style="font-weight:700;color:var(--red)">â¹0</span>
+      <span id="paymentBalanceAmt" style="font-weight:700;color:var(--red)">₹0</span>
     </div>
     <div class="form-group">
       <label>Payment Mode</label>
       <div class="pay-modes">
-        <button class="pay-mode-btn active" onclick="setPayMode(this,'Cash')">ðµ Cash</button>
-        <button class="pay-mode-btn" onclick="setPayMode(this,'UPI')">ð± UPI</button>
-        <button class="pay-mode-btn" onclick="setPayMode(this,'Card')">ð³ Card</button>
-        <button class="pay-mode-btn" onclick="setPayMode(this,'Bank Transfer')">ð¦ Bank</button>
+        <button class="pay-mode-btn active" onclick="setPayMode(this,'Cash')">💵 Cash</button>
+        <button class="pay-mode-btn" onclick="setPayMode(this,'UPI')">📱 UPI</button>
+        <button class="pay-mode-btn" onclick="setPayMode(this,'Card')">💳 Card</button>
+        <button class="pay-mode-btn" onclick="setPayMode(this,'Bank Transfer')">🏦 Bank</button>
       </div>
     </div>
     <div id="onlinePayDetails" style="display:none">
@@ -444,20 +444,20 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   <div class="modal">
     <div class="modal-header">
       <h2>Add Expense</h2>
-      <button class="modal-close" onclick="closeModal('expenseModal')">â</button>
+      <button class="modal-close" onclick="closeModal('expenseModal')">✕</button>
     </div>
     <div class="form-group">
       <label>Category *</label>
       <div class="cat-grid">
-        <button class="cat-btn" onclick="selectCat(this,'Cleaning')">ð§¹ Cleaning</button>
-        <button class="cat-btn" onclick="selectCat(this,'Repair')">ð§ Repair</button>
-        <button class="cat-btn" onclick="selectCat(this,'Electricity')">ð¡ Electricity</button>
-        <button class="cat-btn" onclick="selectCat(this,'Water')">ð§ Water</button>
-        <button class="cat-btn" onclick="selectCat(this,'Supplies')">ð Supplies</button>
-        <button class="cat-btn" onclick="selectCat(this,'Laundry')">ð Laundry</button>
-        <button class="cat-btn" onclick="selectCat(this,'Food')">ð½ï¸ Food</button>
-        <button class="cat-btn" onclick="selectCat(this,'Salary')">ð¤ Salary</button>
-        <button class="cat-btn" onclick="selectCat(this,'Other')">ð¦ Other</button>
+        <button class="cat-btn" onclick="selectCat(this,'Cleaning')">🧹 Cleaning</button>
+        <button class="cat-btn" onclick="selectCat(this,'Repair')">🔧 Repair</button>
+        <button class="cat-btn" onclick="selectCat(this,'Electricity')">💡 Electricity</button>
+        <button class="cat-btn" onclick="selectCat(this,'Water')">💧 Water</button>
+        <button class="cat-btn" onclick="selectCat(this,'Supplies')">🛒 Supplies</button>
+        <button class="cat-btn" onclick="selectCat(this,'Laundry')">👕 Laundry</button>
+        <button class="cat-btn" onclick="selectCat(this,'Food')">🍽️ Food</button>
+        <button class="cat-btn" onclick="selectCat(this,'Salary')">👤 Salary</button>
+        <button class="cat-btn" onclick="selectCat(this,'Other')">📦 Other</button>
       </div>
     </div>
     <div class="form-group">
@@ -465,7 +465,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
       <input type="text" class="form-input" id="expenseDesc" placeholder="What was this expense for?">
     </div>
     <div class="form-group">
-      <label>Amount (â¹) *</label>
+      <label>Amount (₹) *</label>
       <input type="number" class="form-input" id="expenseAmount" placeholder="Enter amount" min="0" inputmode="numeric">
     </div>
     <div class="form-group">
@@ -475,10 +475,10 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
     <div class="form-group">
       <label>Payment Mode</label>
       <div class="pay-modes">
-        <button class="pay-mode-btn active" id="expPayMode_Cash" onclick="setExpensePayMode(this,'Cash')">ðµ Cash</button>
-        <button class="pay-mode-btn" id="expPayMode_UPI" onclick="setExpensePayMode(this,'UPI')">ð± UPI</button>
-        <button class="pay-mode-btn" id="expPayMode_Card" onclick="setExpensePayMode(this,'Card')">ð³ Card</button>
-        <button class="pay-mode-btn" id="expPayMode_Bank" onclick="setExpensePayMode(this,'Bank Transfer')">ð¦ Bank</button>
+        <button class="pay-mode-btn active" id="expPayMode_Cash" onclick="setExpensePayMode(this,'Cash')">💵 Cash</button>
+        <button class="pay-mode-btn" id="expPayMode_UPI" onclick="setExpensePayMode(this,'UPI')">📱 UPI</button>
+        <button class="pay-mode-btn" id="expPayMode_Card" onclick="setExpensePayMode(this,'Card')">💳 Card</button>
+        <button class="pay-mode-btn" id="expPayMode_Bank" onclick="setExpensePayMode(this,'Bank Transfer')">🏦 Bank</button>
       </div>
     </div>
     <div id="expOnlinePayDetails" style="display:none">
@@ -500,10 +500,10 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   <div class="modal">
     <div class="modal-header">
       <h2>Check Out Guest</h2>
-      <button class="modal-close" onclick="closeModal('checkoutModal')">â</button>
+      <button class="modal-close" onclick="closeModal('checkoutModal')">✕</button>
     </div>
     <div id="checkoutInfo"></div>
-    <button class="btn-primary" onclick="confirmCheckout()" style="margin-top:12px">â Confirm Check Out</button>
+    <button class="btn-primary" onclick="confirmCheckout()" style="margin-top:12px">✅ Confirm Check Out</button>
   </div>
 </div>
 
@@ -512,7 +512,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   <div class="modal">
     <div class="modal-header">
       <h2>Cancel Booking</h2>
-      <button class="modal-close" onclick="closeModal('cancelModal')">â</button>
+      <button class="modal-close" onclick="closeModal('cancelModal')">✕</button>
     </div>
     <div id="cancelInfo"></div>
     <div style="margin-top:14px">
@@ -520,11 +520,11 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
       <input type="text" class="form-input" id="cancelReason" placeholder="e.g. Guest requested, No-show...">
     </div>
     <div style="margin-top:14px;padding:10px;background:#fef2f2;border-radius:8px;font-size:13px;color:#dc2626;font-weight:600">
-      â ï¸ This will mark the booking as cancelled. The room will become available again.
+      ⚠️ This will mark the booking as cancelled. The room will become available again.
     </div>
     <div class="row-btns" style="margin-top:14px">
       <button class="btn-sm" style="flex:1;background:#f3f4f6;color:#374151" onclick="closeModal('cancelModal')">Keep Booking</button>
-      <button class="btn-sm red" style="flex:1" onclick="confirmCancel()">ð« Cancel Booking</button>
+      <button class="btn-sm red" style="flex:1" onclick="confirmCancel()">🚫 Cancel Booking</button>
     </div>
   </div>
 </div>
@@ -533,7 +533,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 <div class="modal-overlay" id="logoutModal">
   <div class="modal">
     <div style="text-align:center;padding:10px 0">
-      <div style="font-size:40px;margin-bottom:12px">ð</div>
+      <div style="font-size:40px;margin-bottom:12px">👋</div>
       <div style="font-size:18px;font-weight:700;margin-bottom:8px">Logout?</div>
       <div style="font-size:14px;color:var(--text2);margin-bottom:24px">Are you sure you want to logout?</div>
       <div style="display:flex;gap:10px">
@@ -685,17 +685,17 @@ function buildNav() {
   var nav = document.getElementById('bottomNav');
   var isOwner = STATE.user.role === 'owner';
   var staffItems = [
-    { id: 'rooms',    label: 'Rooms',    icon: 'ð¨' },
-    { id: 'bookings', label: 'Bookings', icon: 'ð' },
-    { id: 'expenses', label: 'Expenses', icon: 'ð¸' },
-    { id: 'report',   label: 'Report',   icon: 'ð' },
-    { id: 'search',   label: 'Search',   icon: 'ð' },
+    { id: 'rooms',    label: 'Rooms',    icon: '🏨' },
+    { id: 'bookings', label: 'Bookings', icon: '📋' },
+    { id: 'expenses', label: 'Expenses', icon: '💸' },
+    { id: 'report',   label: 'Report',   icon: '📊' },
+    { id: 'search',   label: 'Search',   icon: '🔍' },
   ];
   var ownerItems = [
-    { id: 'owner',    label: 'Hotels',   icon: 'ð¨' },
-    { id: 'report',   label: 'Report',   icon: 'ð' },
-    { id: 'search',   label: 'Search',   icon: 'ð' },
-    { id: 'cameras',  label: 'Cameras',  icon: 'ð·' },
+    { id: 'owner',    label: 'Hotels',   icon: '🏨' },
+    { id: 'report',   label: 'Report',   icon: '📊' },
+    { id: 'search',   label: 'Search',   icon: '🔍' },
+    { id: 'cameras',  label: 'Cameras',  icon: '📷' },
   ];
   var items = isOwner ? ownerItems : staffItems;
   var html = '';
@@ -828,7 +828,7 @@ function openRoomAction(roomId) {
       'Pending: <strong class="' + pendingClass + '">' + fmt(Math.max(0, pending)) + '</strong></div>' +
       '<div class="row-btns">' + payBtn +
       '<button class="btn-sm red" style="flex:1" onclick="closeModal(\'roomModal\');openCheckoutModal(' + b.id + ')">Check Out</button></div>' +
-      '<div style="margin-top:8px"><button class="btn-sm" style="width:100%;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;font-size:12px" onclick="closeModal(\'roomModal\');openCancelModal(' + b.id + ')">ð« Cancel Booking</button></div>';
+      '<div style="margin-top:8px"><button class="btn-sm" style="width:100%;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;font-size:12px" onclick="closeModal(\'roomModal\');openCancelModal(' + b.id + ')">🚫 Cancel Booking</button></div>';
   }
   el.innerHTML = html;
   openModal('roomModal');
@@ -937,12 +937,12 @@ function updateGuestIdProofData() {
 function renderGuestList() {
   var container = document.getElementById('guestIdList');
   if (!container) return;
-  var idTypes = [['Aadhar','ðªª'],['PAN','ð'],['Passport','ð'],['DL','ð'],['Voter ID','ð³'],['Other','ð']];
+  var idTypes = [['Aadhar','🪪'],['PAN','🗂'],['Passport','📕'],['DL','🚗'],['Voter ID','🗳'],['Other','📄']];
   var html = '';
   (STATE.guests||[]).forEach(function(g, idx) {
     var isFirst = idx === 0;
     var label = isFirst ? 'Guest 1 (Primary)' : 'Guest ' + (idx + 1);
-    var removeBtn = isFirst ? '' : '<button type="button" onclick="removeGuest('+idx+')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">â Remove</button>';
+    var removeBtn = isFirst ? '' : '<button type="button" onclick="removeGuest('+idx+')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">✕ Remove</button>';
     var nameField = isFirst ? '' : '<input type="text" class="form-input" placeholder="Guest '+(idx+1)+' full name *" value="'+(g.name||'').replace(/"/g,"&quot;")+'" oninput="STATE.guests['+idx+'].name=this.value" style="margin-bottom:10px">';
     var typeBtns = idTypes.map(function(t) {
       var act = g.idType===t[0]?' active':'';
@@ -950,20 +950,20 @@ function renderGuestList() {
     }).join('');
     var frontContent = g.front
       ? '<img id="guestFrontPreview_'+idx+'" src="'+g.front+'" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain">'
-      : '<div id="guestFrontPh_'+idx+'" style="text-align:center;color:var(--text3);padding:12px 6px"><div style="font-size:20px;margin-bottom:3px">ð·</div><div style="font-size:10px">Tap to capture or upload</div></div><img id="guestFrontPreview_'+idx+'" style="display:none">';
+      : '<div id="guestFrontPh_'+idx+'" style="text-align:center;color:var(--text3);padding:12px 6px"><div style="font-size:20px;margin-bottom:3px">📷</div><div style="font-size:10px">Tap to capture or upload</div></div><img id="guestFrontPreview_'+idx+'" style="display:none">';
     var backContent = g.back
       ? '<img id="guestBackPreview_'+idx+'" src="'+g.back+'" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain">'
-      : '<div id="guestBackPh_'+idx+'" style="text-align:center;color:var(--text3);padding:12px 6px"><div style="font-size:20px;margin-bottom:3px">ð·</div><div style="font-size:10px">Tap to capture or upload</div></div><img id="guestBackPreview_'+idx+'" style="display:none">';
+      : '<div id="guestBackPh_'+idx+'" style="text-align:center;color:var(--text3);padding:12px 6px"><div style="font-size:20px;margin-bottom:3px">📷</div><div style="font-size:10px">Tap to capture or upload</div></div><img id="guestBackPreview_'+idx+'" style="display:none">';
     html +=
       '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
-          '<span style="font-size:13px;font-weight:700;color:var(--primary)">ð¤ '+label+'</span>'+removeBtn+
+          '<span style="font-size:13px;font-weight:700;color:var(--primary)">👤 '+label+'</span>'+removeBtn+
         '</div>'+
         nameField+
         '<div id="guestTypeGrid_'+idx+'" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">'+typeBtns+'</div>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
           '<div>'+
-            '<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Front â±</div>'+
+            '<div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Front ✱</div>'+
             '<div class="id-proof-area" id="guestFrontArea_'+idx+'" style="'+(g.front?'border-color:var(--green)':'')+'" onclick="document.getElementById('guestFrontFile_'+idx+'').click()">'+frontContent+'</div>'+
             '<input type="file" id="guestFrontFile_'+idx+'" accept="image/*" style="display:none" onchange="handleGuestIdUpload(this,'+idx+','front')">'+
           '</div>'+
@@ -1068,7 +1068,7 @@ function updatePaymentBalance() {
     info.style.display = '';
     amt.textContent = fmt(remaining);
     amt.style.color = remaining <= 0 ? 'var(--green)' : 'var(--red)';
-    amt.textContent = remaining <= 0 ? 'Fully Paid â' : fmt(remaining);
+    amt.textContent = remaining <= 0 ? 'Fully Paid ✓' : fmt(remaining);
   } else { info.style.display = 'none'; }
 }
 
@@ -1247,7 +1247,7 @@ async function loadBookings() {
         ' - Pending: <strong class="' + pendingClass + '">' + fmt(Math.max(0,pending)) + '</strong>' +
         ' &nbsp;' + payTag + '&nbsp;' + statusTag + '</div>' +
         '<div style="font-size:11px;color:var(--text3)">By ' + b.staff_name + '</div>' +
-        (pending > 0 ? '<button class="btn-primary" style="width:100%;margin-top:10px;padding:10px;font-size:14px" onclick="openPaymentModal(' + b.id + ')">ð° Add Payment â ' + fmt(pending) + ' due</button>' : '') +
+        (pending > 0 ? '<button class="btn-primary" style="width:100%;margin-top:10px;padding:10px;font-size:14px" onclick="openPaymentModal(' + b.id + ')">💰 Add Payment — ' + fmt(pending) + ' due</button>' : '') +
         '</div>';
     });
     document.getElementById('bookingsList').innerHTML = html;
@@ -1378,16 +1378,16 @@ function renderReportData(data) {
       '<div class="section-title" style="margin-bottom:8px">Payment Breakdown</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
       '<div style="background:#dcfce7;border-radius:10px;padding:10px;text-align:center">' +
-        '<div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px">ðµ CASH RECEIVED</div>' +
+        '<div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:4px">💵 CASH RECEIVED</div>' +
         '<div style="font-size:18px;font-weight:800;color:#166534">' + fmt(s.cashRevenue || 0) + '</div></div>' +
       '<div style="background:#dbeafe;border-radius:10px;padding:10px;text-align:center">' +
-        '<div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:4px">ð± ONLINE RECEIVED</div>' +
+        '<div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:4px">📱 ONLINE RECEIVED</div>' +
         '<div style="font-size:18px;font-weight:800;color:#1e40af">' + fmt(s.onlineRevenue || 0) + '</div></div>' +
       '<div style="background:#fef2f2;border-radius:10px;padding:10px;text-align:center">' +
-        '<div style="font-size:11px;font-weight:700;color:#991b1b;margin-bottom:4px">ðµ CASH EXPENSE</div>' +
+        '<div style="font-size:11px;font-weight:700;color:#991b1b;margin-bottom:4px">💵 CASH EXPENSE</div>' +
         '<div style="font-size:18px;font-weight:800;color:#991b1b">' + fmt(s.cashExpenses || 0) + '</div></div>' +
       '<div style="background:#fef3c7;border-radius:10px;padding:10px;text-align:center">' +
-        '<div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:4px">ð± ONLINE EXPENSE</div>' +
+        '<div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:4px">📱 ONLINE EXPENSE</div>' +
         '<div style="font-size:18px;font-weight:800;color:#92400e">' + fmt(s.onlineExpenses || 0) + '</div></div>' +
       '</div></div>';
   }
@@ -1399,12 +1399,12 @@ function renderReportData(data) {
       var mode = p.payment_mode || 'Cash';
       html += '<div class="report-pay-row">' +
         '<div style="flex:1">' +
-        '<div style="font-size:13px;font-weight:700">Room ' + p.room_number + ' â ' + p.guest_name + '</div>' +
+        '<div style="font-size:13px;font-weight:700">Room ' + p.room_number + ' — ' + p.guest_name + '</div>' +
         '<div style="margin-top:2px">' +
           '<span class="mode-badge ' + modeClass(p) + '">' + mode + '</span>' +
           acctDetail(p) +
         '</div>' +
-        '<div style="font-size:11px;color:var(--text3)">' + fmtDateTime(p.created_at) + (p.notes ? ' Â· ' + p.notes : '') + '</div>' +
+        '<div style="font-size:11px;color:var(--text3)">' + fmtDateTime(p.created_at) + (p.notes ? ' · ' + p.notes : '') + '</div>' +
         '</div>' +
         '<div style="font-size:15px;font-weight:800;color:var(--green);flex-shrink:0;text-align:right">' + fmt(p.amount) + '</div>' +
       '</div>';
@@ -1416,11 +1416,11 @@ function renderReportData(data) {
     html += '<div class="card"><div class="section-title">Bookings</div>';
     data.bookings.forEach(function(b) {
       var pending = b.amount - b.payment_received;
-      var pendingHtml = pending > 0 ? '<div style="font-size:11px;color:var(--red)">Due: ' + fmt(pending) + '</div>' : '<div style="font-size:11px;color:var(--green)">â Paid</div>';
-      var staffDiv = b.staff_name ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">By ' + b.staff_name + (b.id_proof_type ? ' Â· ID: ' + b.id_proof_type : '') + '</div>' : '';
+      var pendingHtml = pending > 0 ? '<div style="font-size:11px;color:var(--red)">Due: ' + fmt(pending) + '</div>' : '<div style="font-size:11px;color:var(--green)">✓ Paid</div>';
+      var staffDiv = b.staff_name ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">By ' + b.staff_name + (b.id_proof_type ? ' · ID: ' + b.id_proof_type : '') + '</div>' : '';
       html += '<div class="report-row">' +
         '<div style="flex:1">' +
-        '<div style="font-size:14px;font-weight:700">Room ' + b.room_number + ' - ' + b.guest_name + (b.guest_phone ? ' Â· ' + b.guest_phone : '') + '</div>' +
+        '<div style="font-size:14px;font-weight:700">Room ' + b.room_number + ' - ' + b.guest_name + (b.guest_phone ? ' · ' + b.guest_phone : '') + '</div>' +
         '<div style="font-size:11px;color:var(--text2);margin-top:3px">' + fmtDateTime(b.check_in) +
         ' <span class="tag ' + b.booking_type + '">' + b.booking_type + '</span> <span class="tag ' + b.status + '">' + b.status + '</span></div>' +
         staffDiv + '</div>' +
@@ -1434,9 +1434,9 @@ function renderReportData(data) {
       var desc = e.description || '';
       var mode = e.payment_mode || 'Cash';
       html += '<div class="report-row">' +
-        '<div style="flex:1"><div style="font-size:14px;font-weight:600">' + e.category + (desc ? ' Â· ' + desc : '') + '</div>' +
+        '<div style="flex:1"><div style="font-size:14px;font-weight:600">' + e.category + (desc ? ' · ' + desc : '') + '</div>' +
         '<div style="margin-top:2px"><span class="mode-badge ' + modeClass(e) + '">' + mode + '</span>' + acctDetail(e) + '</div>' +
-        '<div style="font-size:11px;color:var(--text3)">' + e.staff_name + ' Â· ' + e.expense_date + '</div></div>' +
+        '<div style="font-size:11px;color:var(--text3)">' + e.staff_name + ' · ' + e.expense_date + '</div></div>' +
         '<div style="font-size:15px;font-weight:700;color:var(--red);flex-shrink:0">' + fmt(e.amount) + '</div></div>';
     });
     html += '</div>';
@@ -1481,14 +1481,14 @@ async function runCustomerSearch() {
       html += '<div class="card" style="padding:12px;margin-bottom:8px;cursor:pointer" onclick="viewCustomerDetail(' + b.id + ',\'' + b.guest_name.replace(/'/g,'') + '\')">' +
         '<div class="flex-between mb4">' +
         '<div><div style="font-size:15px;font-weight:700">' + b.guest_name + '</div>' +
-        '<div style="font-size:12px;color:var(--text2)">' + (b.guest_phone || 'No phone') + ' Â· ' + b.hotel_name + '</div></div>' +
+        '<div style="font-size:12px;color:var(--text2)">' + (b.guest_phone || 'No phone') + ' · ' + b.hotel_name + '</div></div>' +
         '<div style="text-align:right">' + statusTag + ' ' + payTag + '</div></div>' +
         '<div class="flex-between">' +
-        '<div style="font-size:12px;color:var(--text3)">Room ' + b.room_number + ' Â· ' + fmtDateTime(b.check_in) + (b.id_proof_type ? ' Â· ID: ' + b.id_proof_type : '') + '</div>' +
+        '<div style="font-size:12px;color:var(--text3)">Room ' + b.room_number + ' · ' + fmtDateTime(b.check_in) + (b.id_proof_type ? ' · ID: ' + b.id_proof_type : '') + '</div>' +
         '<div style="font-size:14px;font-weight:700">' + fmt(b.amount) + '</div></div>' +
         (pending > 0 ? '<div style="font-size:11px;color:var(--red);margin-top:4px">Due: ' + fmt(pending) + '</div>' : '') +
         '<div style="font-size:11px;color:var(--primary);margin-top:6px;font-weight:600">Tap to view ID proof &rarr;</div>' +
-        (pending > 0 ? '<div style="margin-top:8px"><button class="btn-primary" style="width:100%;padding:8px;font-size:13px" onclick="event.stopPropagation();openPaymentModal(' + b.id + ')">ð° Add Payment â ' + fmt(pending) + ' due</button></div>' : '') +
+        (pending > 0 ? '<div style="margin-top:8px"><button class="btn-primary" style="width:100%;padding:8px;font-size:13px" onclick="event.stopPropagation();openPaymentModal(' + b.id + ')">💰 Add Payment — ' + fmt(pending) + ' due</button></div>' : '') +
         '</div>';
     });
     document.getElementById('customerSearchResults').innerHTML = html;
@@ -1496,7 +1496,7 @@ async function runCustomerSearch() {
 }
 
 async function viewCustomerDetail(bookingId, guestName) {
-  document.getElementById('idProofViewerTitle').textContent = guestName + ' â ID Proof';
+  document.getElementById('idProofViewerTitle').textContent = guestName + ' — ID Proof';
   document.getElementById('idProofViewerContent').innerHTML = '<div style="padding:24px;color:var(--text3)">Loading...</div>';
   openModal('idProofViewerModal');
   try {
@@ -1511,7 +1511,7 @@ async function viewCustomerDetail(bookingId, guestName) {
           proofData.guests.forEach(function(g, i) {
             var gn = g.name || (i === 0 ? (d.guest_name||'Guest 1') : 'Guest '+(i+1));
             html += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">';
-            html += '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px">ð¤ '+gn+(g.idType?' Â· '+g.idType:'')+'</div>';
+            html += '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px">👤 '+gn+(g.idType?' · '+g.idType:'')+'</div>';
             if (g.front) html += '<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">FRONT</div><img src="'+g.front+'" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
             if (g.back) html += '<div><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">BACK</div><img src="'+g.back+'" style="max-width:100%;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.15)"></div>';
             html += '</div>';
@@ -1714,7 +1714,7 @@ function renderOwnerHotelDetail(tab) {
           html += '<div style="padding:12px 14px;border-bottom:1px solid var(--border)">' +
             '<div style="font-size:14px;font-weight:700;color:var(--orange)">Room ' + b.room_number + ' - ' + b.guest_name + '</div>' +
             '<div style="font-size:11px;color:var(--text2)">Expected checkout: ' + fmtDateTime(b.expected_checkout) + '</div>' +
-            '<div style="font-size:11px;color:var(--red);font-weight:600;margin-top:2px">Still occupied â guest has not checked out</div></div>';
+            '<div style="font-size:11px;color:var(--red);font-weight:600;margin-top:2px">Still occupied — guest has not checked out</div></div>';
         });
         html += '</div>';
       }
